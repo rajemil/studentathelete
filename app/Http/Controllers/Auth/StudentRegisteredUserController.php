@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\Profile;
 use App\Models\Sport;
 use App\Models\User;
@@ -20,7 +21,10 @@ class StudentRegisteredUserController extends Controller
 {
     public function create(): View
     {
-        $sports = Sport::query()->orderBy('name')->get(['id', 'name']);
+        $sports = Sport::query()
+            ->where('organization_id', Organization::defaultId())
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('auth.register-student', compact('sports'));
     }
@@ -48,6 +52,7 @@ class StudentRegisteredUserController extends Controller
 
         $user = DB::transaction(function () use ($validated, $bmi) {
             $user = User::create([
+                'organization_id' => Organization::defaultId(),
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'role' => 'student',
@@ -66,7 +71,12 @@ class StudentRegisteredUserController extends Controller
             ]);
 
             if (! empty($validated['sports_interested'])) {
-                $user->sports()->sync($validated['sports_interested']);
+                $user->sports()->sync(
+                    Sport::query()
+                        ->where('organization_id', Organization::defaultId())
+                        ->whereIn('id', $validated['sports_interested'])
+                        ->pluck('id')
+                );
             }
 
             return $user;
@@ -81,7 +91,10 @@ class StudentRegisteredUserController extends Controller
     private function bmi(float $heightCm, float $weightKg): float
     {
         $m = $heightCm / 100.0;
-        if ($m <= 0) return 0.0;
+        if ($m <= 0) {
+            return 0.0;
+        }
+
         return round($weightKg / ($m * $m), 2);
     }
 }

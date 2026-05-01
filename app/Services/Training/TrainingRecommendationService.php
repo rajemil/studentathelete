@@ -15,8 +15,7 @@ class TrainingRecommendationService
     public function __construct(
         private readonly AnalyticsService $analytics,
         private readonly InjuryRiskService $injuryRisk,
-    ) {
-    }
+    ) {}
 
     /**
      * Generate / upsert a weekly plan for a user (optionally sport-specific).
@@ -60,7 +59,7 @@ class TrainingRecommendationService
             ->first();
 
         if (! $rec) {
-            $rec = new TrainingRecommendation();
+            $rec = new TrainingRecommendation;
             $rec->user_id = $athlete->id;
             $rec->sport_id = $sport?->id;
             $rec->created_by = null; // system-generated
@@ -207,23 +206,23 @@ class TrainingRecommendationService
     private function renderPlanText(string $focus, array $routine, array $strategy, array $timeline, int $fatigue, string $riskLevel, ?string $eventTitle): string
     {
         $lines = [];
-        $lines[] = "## Focus";
+        $lines[] = '## Focus';
         $lines[] = $focus;
-        $lines[] = "";
-        $lines[] = "## Readiness";
-        $lines[] = "Fatigue score: {$fatigue}/100 · Injury risk: ".strtoupper($riskLevel).".";
-        $lines[] = "";
-        $lines[] = "## Weekly routine";
+        $lines[] = '';
+        $lines[] = '## Readiness';
+        $lines[] = "Fatigue score: {$fatigue}/100 · Injury risk: ".strtoupper($riskLevel).'.';
+        $lines[] = '';
+        $lines[] = '## Weekly routine';
         foreach ($routine as $r) {
             $lines[] = "- {$r}";
         }
-        $lines[] = "";
-        $lines[] = "## Game strategy";
+        $lines[] = '';
+        $lines[] = '## Game strategy';
         foreach ($strategy as $s) {
             $lines[] = "- {$s}";
         }
-        $lines[] = "";
-        $lines[] = "## Preparation timeline";
+        $lines[] = '';
+        $lines[] = '## Preparation timeline';
         if ($eventTitle) {
             $lines[] = "Target event: {$eventTitle}";
         }
@@ -237,4 +236,3 @@ class TrainingRecommendationService
         return implode("\n", $lines);
     }
 }
-

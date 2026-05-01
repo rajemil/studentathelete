@@ -28,16 +28,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $user = $request->user();
-
-        $roleRoute = match ($user?->role) {
-            'admin' => 'admin.dashboard',
-            'coach' => 'coach.dashboard',
-            'student' => 'student.dashboard',
-            default => 'dashboard',
-        };
-
-        return redirect()->intended(route($roleRoute));
+        // Keep post-login redirect stable.
+        // The `/dashboard` route handles role-based routing centrally.
+        return redirect()->intended(route('dashboard'));
     }
 
     /**

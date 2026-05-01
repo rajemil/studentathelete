@@ -15,8 +15,8 @@ class DashboardRedirectController extends Controller
         return match ($role) {
             'admin' => redirect()->route('admin.dashboard'),
             'coach' => redirect()->route('coach.dashboard'),
+            'instructor' => redirect()->route('instructor.dashboard'),
             default => redirect()->route('student.dashboard'),
         };
     }
 }
-

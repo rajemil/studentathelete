@@ -14,8 +14,7 @@ class PerformanceWarningNotification extends Notification implements ShouldQueue
         public readonly string $title,
         public readonly string $message,
         public readonly array $payload = [],
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -32,4 +31,3 @@ class PerformanceWarningNotification extends Notification implements ShouldQueue
         ];
     }
 }
-

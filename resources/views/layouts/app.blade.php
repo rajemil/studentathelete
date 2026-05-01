@@ -90,13 +90,8 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="px-2 pb-2">
-                                    <a href="{{ route('dashboard') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Dashboard</a>
-                                    @if(in_array(Auth::user()->role ?? 'student', ['admin','coach'], true))
-                                        <a href="{{ route('sports.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Sports</a>
-                                        <a href="{{ route('analytics.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Analytics</a>
-                                    @endif
-                                    <a href="{{ route('profile.edit') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Profile</a>
+                                <div class="px-2 pb-2 max-h-[70vh] overflow-y-auto">
+                                    @include('layouts.nav-mobile-links')
                                 </div>
                             </div>
                         </div>

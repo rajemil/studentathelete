@@ -36,7 +36,7 @@
                 </div>
                 <div>
                     <x-input-label for="gender" value="Gender" />
-                    <select id="gender" name="gender" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required>
+                    <select id="gender" name="gender" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
                         <option value="">Select...</option>
                         @foreach(['Male','Female','Non-binary','Prefer not to say'] as $g)
                             <option value="{{ $g }}" @selected(old('gender')===$g)>{{ $g }}</option>
@@ -73,7 +73,14 @@
 
             <div>
                 <x-input-label for="sports_interested" value="Sports Interested" />
-                <select id="sports_interested" name="sports_interested[]" multiple size="6" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
+                <select
+                    id="sports_interested"
+                    name="sports_interested[]"
+                    multiple
+                    size="6"
+                    class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition
+                           [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-900 dark:[&>option]:text-gray-100"
+                >
                     @foreach($sports as $sport)
                         <option value="{{ $sport->id }}" @selected(collect(old('sports_interested', []))->contains($sport->id))>{{ $sport->name }}</option>
                     @endforeach

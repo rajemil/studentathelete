@@ -11,9 +11,7 @@ class NewScoreNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public readonly PerformanceScore $score)
-    {
-    }
+    public function __construct(public readonly PerformanceScore $score) {}
 
     public function via(object $notifiable): array
     {
@@ -37,4 +35,3 @@ class NewScoreNotification extends Notification implements ShouldQueue
         ];
     }
 }
-

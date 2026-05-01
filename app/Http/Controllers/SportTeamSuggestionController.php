@@ -15,6 +15,8 @@ class SportTeamSuggestionController extends Controller
 {
     public function index(Sport $sport): View
     {
+        $this->authorize('view', $sport);
+
         return view('sports.team_suggestions', [
             'sport' => $sport,
             'result' => null,
@@ -23,6 +25,8 @@ class SportTeamSuggestionController extends Controller
 
     public function generate(Request $request, Sport $sport): View|RedirectResponse
     {
+        $this->authorize('view', $sport);
+
         $validated = $request->validate([
             'mode' => ['required', 'in:strongest,balanced'],
             'team_count' => ['required', 'integer', 'min:2', 'max:12'],
@@ -31,6 +35,7 @@ class SportTeamSuggestionController extends Controller
 
         $studentIds = $sport->students()
             ->where('role', 'student')
+            ->where('users.organization_id', $request->user()->organization_id)
             ->pluck('users.id');
 
         $students = User::query()
@@ -48,120 +53,71 @@ class SportTeamSuggestionController extends Controller
             ->whereIn('user_id', $studentIds)
             ->select('user_id', DB::raw('avg(score) as avg_score'))
             ->groupBy('user_id')
-            ->pluck('avg_score', 'user_id')
-            ->map(fn ($v) => (float) $v);
+            ->get()
+            ->keyBy('user_id')
+            ->map(fn ($row) => (float) $row->avg_score);
 
-        $ranked = $students
-            ->map(fn (User $u) => [
+        $pool = $students->map(function (User $u) use ($avgScores) {
+            return [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
-                'score' => round((float) ($avgScores[$u->id] ?? 0), 2),
-            ])
-            ->sortBy([
-                ['score', 'desc'],
-                ['name', 'asc'],
-            ])
-            ->values();
-
-        $needed = $validated['team_count'] * $validated['team_size'];
-        $pool = $ranked->take($needed)->values();
-
-        $teams = $validated['mode'] === 'strongest'
-            ? $this->generateStrongest($pool, (int) $validated['team_count'], (int) $validated['team_size'])
-            : $this->generateBalancedSnake($pool, (int) $validated['team_count'], (int) $validated['team_size']);
-
-        $scoredTeams = $teams->map(function (Collection $team, int $idx) {
-            $avg = $team->avg('score') ?? 0;
-            $sum = $team->sum('score');
-
-            return [
-                'name' => 'Team '.($idx + 1),
-                'avg_score' => round((float) $avg, 2),
-                'sum_score' => round((float) $sum, 2),
-                'members' => $team->values(),
+                'avg_score' => round((float) ($avgScores[$u->id] ?? 0), 2),
             ];
         })->values();
 
-        $winProbabilities = $this->pairwiseWinProbabilities($scoredTeams);
+        $teams = $validated['mode'] === 'strongest'
+            ? $this->strongest($pool, (int) $validated['team_count'], (int) $validated['team_size'])
+            : $this->balancedDraft($pool, (int) $validated['team_count'], (int) $validated['team_size']);
 
-        $result = [
-            'mode' => $validated['mode'],
-            'team_count' => (int) $validated['team_count'],
-            'team_size' => (int) $validated['team_size'],
-            'pool_count' => $pool->count(),
-            'teams' => $scoredTeams,
-            'win_probabilities' => $winProbabilities,
-        ];
-
-        return view('sports.team_suggestions', compact('sport', 'result'));
+        return view('sports.team_suggestions', [
+            'sport' => $sport,
+            'result' => [
+                'mode' => $validated['mode'],
+                'team_count' => (int) $validated['team_count'],
+                'team_size' => (int) $validated['team_size'],
+                'teams' => $teams,
+            ],
+        ]);
     }
 
-    private function generateStrongest(Collection $pool, int $teamCount, int $teamSize): Collection
+    private function strongest(Collection $pool, int $teamCount, int $teamSize): array
     {
-        $teams = collect(range(1, $teamCount))->map(fn () => collect());
-        $idx = 0;
+        $sorted = $pool->sortByDesc('avg_score')->values();
+        $chunks = $sorted->chunk($teamSize)->take($teamCount)->values();
 
-        for ($t = 0; $t < $teamCount; $t++) {
-            for ($i = 0; $i < $teamSize; $i++) {
-                if (! isset($pool[$idx])) break;
-                $teams[$t]->push($pool[$idx]);
-                $idx++;
+        return $chunks->map(function (Collection $team, int $idx) {
+            return [
+                'name' => 'Team '.($idx + 1),
+                'avg_score' => round($team->avg('avg_score'), 2),
+                'members' => $team->values()->all(),
+            ];
+        })->all();
+    }
+
+    private function balancedDraft(Collection $pool, int $teamCount, int $teamSize): array
+    {
+        $sorted = $pool->sortByDesc('avg_score')->values();
+
+        $teams = collect(range(1, $teamCount))->map(fn ($i) => collect())->values();
+
+        $snake = true;
+        foreach ($sorted as $i => $player) {
+            $round = (int) floor($i / $teamCount);
+            $pos = $i % $teamCount;
+            $index = $round % 2 === 0 ? $pos : ($teamCount - 1 - $pos);
+
+            if ($teams[$index]->count() < $teamSize) {
+                $teams[$index]->push($player);
             }
         }
 
-        return $teams;
-    }
-
-    private function generateBalancedSnake(Collection $pool, int $teamCount, int $teamSize): Collection
-    {
-        $teams = collect(range(1, $teamCount))->map(fn () => collect());
-        $direction = 1;
-        $teamIndex = 0;
-
-        foreach ($pool as $player) {
-            if ($teams[$teamIndex]->count() < $teamSize) {
-                $teams[$teamIndex]->push($player);
-            }
-
-            // advance snake
-            $next = $teamIndex + $direction;
-            if ($next >= $teamCount || $next < 0) {
-                $direction *= -1;
-                $teamIndex += $direction;
-            } else {
-                $teamIndex = $next;
-            }
-
-            // stop early if all full
-            if ($teams->every(fn (Collection $t) => $t->count() >= $teamSize)) {
-                break;
-            }
-        }
-
-        return $teams;
-    }
-
-    /**
-     * Simple win probability based on score difference using logistic curve.
-     */
-    private function winProbability(float $aAvg, float $bAvg): float
-    {
-        $diff = $aAvg - $bAvg;
-        $scale = 5.0; // larger => flatter curve
-        $p = 1.0 / (1.0 + exp(-$diff / $scale));
-        return round($p * 100, 1);
-    }
-
-    private function pairwiseWinProbabilities(Collection $scoredTeams): array
-    {
-        $matrix = [];
-        foreach ($scoredTeams as $i => $a) {
-            foreach ($scoredTeams as $j => $b) {
-                if ($i === $j) continue;
-                $matrix[$i][$j] = $this->winProbability((float) $a['avg_score'], (float) $b['avg_score']);
-            }
-        }
-        return $matrix;
+        return $teams->map(function (Collection $team, int $idx) {
+            return [
+                'name' => 'Team '.($idx + 1),
+                'avg_score' => round($team->avg('avg_score'), 2),
+                'members' => $team->values()->all(),
+            ];
+        })->all();
     }
 }

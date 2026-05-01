@@ -11,17 +11,22 @@ use App\Notifications\TrainingScheduleNotification;
 use App\Services\InjuryRisk\InjuryRiskService;
 use App\Services\Insights\InsightsService;
 use App\Services\Training\TrainingRecommendationService;
+use App\Support\ScoreEntryRules;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PerformanceScoreController extends Controller
 {
     public function index(Request $request, Sport $sport): View
     {
+        $this->authorize('recordScores', $sport);
+
         $students = $sport->students()
             ->where('role', 'student')
+            ->where('users.organization_id', $request->user()->organization_id)
             ->orderBy('name')
             ->get(['users.id', 'users.name', 'users.email']);
 
@@ -56,6 +61,8 @@ class PerformanceScoreController extends Controller
 
     public function store(Request $request, Sport $sport, InsightsService $insightsService, InjuryRiskService $injuryRisk, TrainingRecommendationService $training): RedirectResponse
     {
+        $this->authorize('recordScores', $sport);
+
         $now = CarbonImmutable::now();
 
         $validated = $request->validate([
@@ -65,10 +72,16 @@ class PerformanceScoreController extends Controller
             'scored_on' => ['required', 'date'],
         ]);
 
-        $student = User::query()->where('role', 'student')->findOrFail($validated['user_id']);
+        $student = User::query()
+            ->where('role', 'student')
+            ->where('organization_id', $request->user()->organization_id)
+            ->findOrFail($validated['user_id']);
 
-        // Ensure student is assigned to the sport (auto-attach for convenience)
-        $sport->students()->syncWithoutDetaching([$student->id]);
+        if (! ScoreEntryRules::requesterMayEnterScoreFor($request->user(), $student, $sport)) {
+            throw ValidationException::withMessages([
+                'user_id' => ['This athlete is not on your roster for this sport, or is not registered for the sport.'],
+            ]);
+        }
 
         $score = PerformanceScore::create([
             'user_id' => $student->id,
@@ -83,7 +96,12 @@ class PerformanceScoreController extends Controller
         ]);
         $score->load('sport');
 
-        // Refresh insights so dashboards update immediately after new data.
+        activity()
+            ->performedOn($score)
+            ->causedBy($request->user())
+            ->withProperties(['sport_id' => $sport->id, 'student_id' => $student->id])
+            ->log('performance_score_created');
+
         $insightsService->generate($now);
 
         if ($student->profile) {
@@ -93,7 +111,6 @@ class PerformanceScoreController extends Controller
                 'injury_risk' => $result['injury_risk'],
             ]);
 
-            // Performance warning notification if risk escalates
             if (in_array($result['injury_risk'], ['medium', 'high'], true)) {
                 $student->notify(new PerformanceWarningNotification(
                     'Performance warning',
@@ -108,9 +125,7 @@ class PerformanceScoreController extends Controller
             $student->notify(new TrainingScheduleNotification($plan));
         }
 
-        if ($score) {
-            $student->notify(new NewScoreNotification($score));
-        }
+        $student->notify(new NewScoreNotification($score));
 
         return redirect()->route('sports.scores.index', $sport)
             ->with('status', 'Score saved.');

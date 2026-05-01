@@ -61,6 +61,10 @@ class StudentDashboardController extends Controller
         $upcomingEvents = Event::query()
             ->whereNotNull('starts_at')
             ->where('starts_at', '>=', $now)
+            ->where(function ($q) use ($user) {
+                $q->whereHas('sport', fn ($s) => $s->where('organization_id', $user->organization_id))
+                    ->orWhereHas('team', fn ($t) => $t->where('organization_id', $user->organization_id));
+            })
             ->where(function ($q) use ($user, $teamIds, $sportIds) {
                 $q->whereHas('participants', fn ($p) => $p->where('users.id', $user->id))
                     ->orWhereIn('team_id', $teamIds)
@@ -106,4 +110,3 @@ class StudentDashboardController extends Controller
         return view('dashboards.student', compact('kpi', 'recentScores', 'upcomingEvents', 'recommendations', 'chart', 'insights', 'risk'));
     }
 }
-

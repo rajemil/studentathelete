@@ -11,9 +11,7 @@ class TrainingScheduleNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public readonly TrainingRecommendation $plan)
-    {
-    }
+    public function __construct(public readonly TrainingRecommendation $plan) {}
 
     public function via(object $notifiable): array
     {
@@ -32,4 +30,3 @@ class TrainingScheduleNotification extends Notification implements ShouldQueue
         ];
     }
 }
-

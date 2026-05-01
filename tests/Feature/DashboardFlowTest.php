@@ -36,4 +36,13 @@ class DashboardFlowTest extends TestCase
 
         $response->assertRedirect(route('student.dashboard'));
     }
+
+    public function test_dashboard_redirects_instructor_to_instructor_dashboard(): void
+    {
+        $instructor = User::factory()->create(['role' => 'instructor']);
+
+        $response = $this->actingAs($instructor)->get('/dashboard');
+
+        $response->assertRedirect(route('instructor.dashboard'));
+    }
 }

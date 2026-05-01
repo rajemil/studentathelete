@@ -7,14 +7,13 @@ use App\Models\PlayerStat;
 use App\Models\Profile;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Collection;
 
 class InjuryRiskService
 {
     /**
      * Compute and persist fatigue/risk for all student profiles.
      */
-    public function recomputeAll(CarbonImmutable $now = null): int
+    public function recomputeAll(?CarbonImmutable $now = null): int
     {
         $now ??= CarbonImmutable::now();
 
@@ -49,7 +48,7 @@ class InjuryRiskService
      * - Activity frequency (performance_scores + player_stats in last 14 days)
      * - Performance drops (week-over-week average)
      */
-    public function computeForUser(User $athlete, CarbonImmutable $now = null): array
+    public function computeForUser(User $athlete, ?CarbonImmutable $now = null): array
     {
         $now ??= CarbonImmutable::now();
 
@@ -98,10 +97,15 @@ class InjuryRiskService
         // BMI component: penalize underweight/overweight/obese (soft)
         $bmiRisk = 0.0;
         if ($bmi !== null) {
-            if ($bmi < 18.5) $bmiRisk = 18;
-            elseif ($bmi < 25) $bmiRisk = 4;
-            elseif ($bmi < 30) $bmiRisk = 14;
-            else $bmiRisk = 24;
+            if ($bmi < 18.5) {
+                $bmiRisk = 18;
+            } elseif ($bmi < 25) {
+                $bmiRisk = 4;
+            } elseif ($bmi < 30) {
+                $bmiRisk = 14;
+            } else {
+                $bmiRisk = 24;
+            }
         } else {
             $bmiRisk = 8; // unknown BMI
         }
@@ -109,20 +113,31 @@ class InjuryRiskService
         // Activity component: too much load increases fatigue; too little reduces confidence.
         // Target zone: 4–10 activity signals per 14 days.
         $activityRisk = 0.0;
-        if ($activityCount14 <= 1) $activityRisk = 10;
-        elseif ($activityCount14 <= 3) $activityRisk = 6;
-        elseif ($activityCount14 <= 10) $activityRisk = 10;
-        elseif ($activityCount14 <= 16) $activityRisk = 20;
-        else $activityRisk = 28;
+        if ($activityCount14 <= 1) {
+            $activityRisk = 10;
+        } elseif ($activityCount14 <= 3) {
+            $activityRisk = 6;
+        } elseif ($activityCount14 <= 10) {
+            $activityRisk = 10;
+        } elseif ($activityCount14 <= 16) {
+            $activityRisk = 20;
+        } else {
+            $activityRisk = 28;
+        }
 
         // Performance drop component: drop >=15% is meaningful
         $dropRisk = 0.0;
         if ($avgW0 === 0.0 && $avgW1 === 0.0) {
             $dropRisk = 6; // no data
-        } elseif ($dropPct <= -25.0) $dropRisk = 40;
-        elseif ($dropPct <= -15.0) $dropRisk = 28;
-        elseif ($dropPct <= -8.0) $dropRisk = 18;
-        else $dropRisk = 6;
+        } elseif ($dropPct <= -25.0) {
+            $dropRisk = 40;
+        } elseif ($dropPct <= -15.0) {
+            $dropRisk = 28;
+        } elseif ($dropPct <= -8.0) {
+            $dropRisk = 18;
+        } else {
+            $dropRisk = 6;
+        }
 
         // Fatigue score (0-100)
         $fatigue = $bmiRisk + $activityRisk + $dropRisk;
@@ -143,4 +158,3 @@ class InjuryRiskService
         ];
     }
 }
-

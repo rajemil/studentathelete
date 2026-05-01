@@ -12,8 +12,11 @@ class SportRankingController extends Controller
 {
     public function index(Sport $sport): View
     {
+        $this->authorize('view', $sport);
+
         $studentIds = $sport->students()
             ->where('role', 'student')
+            ->where('users.organization_id', auth()->user()->organization_id)
             ->pluck('users.id');
 
         $aggregates = PerformanceScore::query()
@@ -32,6 +35,7 @@ class SportRankingController extends Controller
         $ranked = $students
             ->map(function (User $u) use ($aggregates) {
                 $row = $aggregates->get($u->id);
+
                 return [
                     'id' => $u->id,
                     'name' => $u->name,
@@ -48,6 +52,7 @@ class SportRankingController extends Controller
             ->values()
             ->map(function (array $row, int $idx) {
                 $row['rank'] = $idx + 1;
+
                 return $row;
             });
 

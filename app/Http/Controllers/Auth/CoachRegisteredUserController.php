@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -43,6 +44,7 @@ class CoachRegisteredUserController extends Controller
 
         $user = DB::transaction(function () use ($validated) {
             $user = User::create([
+                'organization_id' => Organization::defaultId(),
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'role' => 'coach',

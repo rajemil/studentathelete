@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Organization;
 use App\Models\Sport;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -13,17 +15,32 @@ class PredictionApiTest extends TestCase
 
     public function test_coach_can_generate_predictions_and_team_endpoints(): void
     {
-        $coach = User::factory()->create(['role' => 'coach']);
-        $studentA = User::factory()->create(['role' => 'student']);
-        $studentB = User::factory()->create(['role' => 'student']);
+        $orgId = Organization::defaultId();
+
+        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $orgId]);
+        $studentA = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
+        $studentB = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
 
         $sport = Sport::query()->create([
+            'organization_id' => $orgId,
             'name' => 'Basketball',
             'slug' => 'basketball',
             'description' => null,
         ]);
 
-        // athlete prediction (coach can view any athlete)
+        $team = Team::query()->create([
+            'organization_id' => $orgId,
+            'name' => 'Varsity',
+            'sport_id' => $sport->id,
+            'primary_coach_id' => $coach->id,
+        ]);
+
+        $team->students()->attach([
+            $studentA->id => ['rank' => 1],
+            $studentB->id => ['rank' => 2],
+        ]);
+
+        // athlete prediction (coach can view coached athletes in their org)
         $pred = $this->actingAs($coach)->getJson('/api/predictions/athletes/'.$studentA->id.'?sport_id='.$sport->id.'&horizon_days=14');
         $pred->assertOk()->assertJsonStructure([
             'athlete' => ['id', 'name'],
@@ -66,5 +83,24 @@ class PredictionApiTest extends TestCase
             'lineup',
         ]);
 
+    }
+
+    public function test_coach_cannot_view_predictions_for_unassigned_student(): void
+    {
+        $orgId = Organization::defaultId();
+
+        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $orgId]);
+        $student = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
+
+        Sport::query()->create([
+            'organization_id' => $orgId,
+            'name' => 'Soccer',
+            'slug' => 'soccer',
+            'description' => null,
+        ]);
+
+        $this->actingAs($coach)
+            ->getJson('/api/predictions/athletes/'.$student->id)
+            ->assertForbidden();
     }
 }

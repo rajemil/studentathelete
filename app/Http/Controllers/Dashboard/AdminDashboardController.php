@@ -20,10 +20,12 @@ class AdminDashboardController extends Controller
     public function __invoke(InsightsService $insightsService): View
     {
         $now = CarbonImmutable::now();
+        $orgId = auth()->user()->organization_id;
 
         $insightsService->ensureGenerated($now);
 
         $countsByRole = User::query()
+            ->where('organization_id', $orgId)
             ->select('role', DB::raw('count(*) as total'))
             ->groupBy('role')
             ->pluck('total', 'role')
@@ -33,12 +35,20 @@ class AdminDashboardController extends Controller
             'students' => (int) ($countsByRole['student'] ?? 0),
             'coaches' => (int) ($countsByRole['coach'] ?? 0),
             'admins' => (int) ($countsByRole['admin'] ?? 0),
-            'sports' => Sport::query()->count(),
-            'teams' => Team::query()->count(),
-            'events_upcoming' => Event::query()->whereNotNull('starts_at')->where('starts_at', '>=', $now)->count(),
+            'sports' => Sport::query()->where('organization_id', $orgId)->count(),
+            'teams' => Team::query()->where('organization_id', $orgId)->count(),
+            'events_upcoming' => Event::query()
+                ->whereNotNull('starts_at')
+                ->where('starts_at', '>=', $now)
+                ->where(function ($q) use ($orgId) {
+                    $q->whereHas('team', fn ($t) => $t->where('organization_id', $orgId))
+                        ->orWhereHas('sport', fn ($s) => $s->where('organization_id', $orgId));
+                })
+                ->count(),
         ];
 
         $sportsDistribution = Sport::query()
+            ->where('organization_id', $orgId)
             ->withCount('students')
             ->orderByDesc('students_count')
             ->limit(8)
@@ -47,6 +57,7 @@ class AdminDashboardController extends Controller
             ->values();
 
         $performanceTrend = PerformanceScore::query()
+            ->whereHas('sport', fn ($q) => $q->where('organization_id', $orgId))
             ->whereNotNull('scored_on')
             ->where('scored_on', '>=', $now->subDays(30)->toDateString())
             ->orderBy('scored_on')
@@ -56,21 +67,45 @@ class AdminDashboardController extends Controller
             ->take(30);
 
         $recentActivity = collect()
-            ->merge(Event::query()->latest('created_at')->limit(6)->get()->map(fn (Event $e) => [
-                'type' => 'Event',
-                'title' => $e->title,
-                'when' => $e->created_at,
-            ]))
-            ->merge(TrainingRecommendation::query()->latest('created_at')->limit(6)->get()->map(fn (TrainingRecommendation $t) => [
-                'type' => 'Recommendation',
-                'title' => $t->title,
-                'when' => $t->created_at,
-            ]))
-            ->merge(PerformanceScore::query()->latest('created_at')->limit(6)->get()->map(fn (PerformanceScore $p) => [
-                'type' => 'Performance',
-                'title' => 'Score: '.$p->score.' ('.$p->category.')',
-                'when' => $p->created_at,
-            ]))
+            ->merge(
+                Event::query()
+                    ->where(function ($q) use ($orgId) {
+                        $q->whereHas('team', fn ($t) => $t->where('organization_id', $orgId))
+                            ->orWhereHas('sport', fn ($s) => $s->where('organization_id', $orgId));
+                    })
+                    ->latest('created_at')
+                    ->limit(6)
+                    ->get()
+                    ->map(fn (Event $e) => [
+                        'type' => 'Event',
+                        'title' => $e->title,
+                        'when' => $e->created_at,
+                    ])
+            )
+            ->merge(
+                TrainingRecommendation::query()
+                    ->whereHas('student', fn ($q) => $q->where('organization_id', $orgId))
+                    ->latest('created_at')
+                    ->limit(6)
+                    ->get()
+                    ->map(fn (TrainingRecommendation $t) => [
+                        'type' => 'Recommendation',
+                        'title' => $t->title,
+                        'when' => $t->created_at,
+                    ])
+            )
+            ->merge(
+                PerformanceScore::query()
+                    ->whereHas('sport', fn ($q) => $q->where('organization_id', $orgId))
+                    ->latest('created_at')
+                    ->limit(6)
+                    ->get()
+                    ->map(fn (PerformanceScore $p) => [
+                        'type' => 'Performance',
+                        'title' => 'Score: '.$p->score.' ('.$p->category.')',
+                        'when' => $p->created_at,
+                    ])
+            )
             ->sortByDesc('when')
             ->take(10)
             ->values();
@@ -87,11 +122,16 @@ class AdminDashboardController extends Controller
         ];
 
         $insights = Insight::query()
+            ->where(function ($q) use ($orgId) {
+                $q->whereNull('user_id')
+                    ->orWhereHas('user', fn ($u) => $u->where('organization_id', $orgId));
+            })
             ->orderByDesc('computed_at')
             ->limit(6)
             ->get();
 
         $riskyAthletes = User::query()
+            ->where('organization_id', $orgId)
             ->where('role', 'student')
             ->whereHas('profile', fn ($q) => $q->whereIn('injury_risk', ['high', 'medium']))
             ->with(['profile'])
@@ -102,4 +142,3 @@ class AdminDashboardController extends Controller
         return view('dashboards.admin', compact('kpi', 'chart', 'recentActivity', 'insights', 'riskyAthletes'));
     }
 }
-

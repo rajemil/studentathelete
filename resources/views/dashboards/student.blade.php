@@ -26,7 +26,7 @@
                 </div>
             @endif
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div id="sport-activity-summary" class="grid grid-cols-1 sm:grid-cols-3 gap-4 scroll-mt-24">
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Sports</div>
                     <div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{{ $kpi['sports'] }}</div>
@@ -95,7 +95,7 @@
                     </div>
                 </div>
 
-                <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm">
+                <div id="ai-recommendations" class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm scroll-mt-24">
                     <div class="border-b border-gray-200/60 dark:border-white/10 px-5 py-4">
                         <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Training recommendations</div>
                     </div>

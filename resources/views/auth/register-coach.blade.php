@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <x-input-label for="gender" value="Gender" />
-                    <select id="gender" name="gender" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required>
+                    <select id="gender" name="gender" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
                         <option value="">Select...</option>
                         @foreach(['Male','Female','Non-binary','Prefer not to say'] as $g)
                             <option value="{{ $g }}" @selected(old('gender')===$g)>{{ $g }}</option>
@@ -65,7 +65,7 @@
                 </div>
                 <div>
                     <x-input-label for="achievements" value="Achievements / Qualifications (optional)" />
-                    <textarea id="achievements" name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">{{ old('achievements') }}</textarea>
+                    <textarea id="achievements" name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-white/35 transition">{{ old('achievements') }}</textarea>
                     <x-input-error :messages="$errors->get('achievements')" class="mt-2" />
                 </div>
             </div>

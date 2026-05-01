@@ -40,7 +40,9 @@ class GenerateWeeklyTrainingPlans extends Command
 
         $count = 0;
         foreach ($query->get() as $student) {
-            if (! $student->profile) continue;
+            if (! $student->profile) {
+                continue;
+            }
             $service->generateWeeklyPlan($student, $sport);
             $count++;
         }

@@ -3,73 +3,100 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sport;
+use App\Models\Team;
 use App\Models\User;
+use App\Support\CoachedTeams;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 
 class SportController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct()
+    {
+        $this->authorizeResource(Sport::class, 'sport');
+    }
+
     public function index(): View
     {
-        $sports = Sport::query()
+        $user = auth()->user();
+
+        $query = Sport::query()
+            ->where('organization_id', $user->organization_id)
             ->withCount('students')
-            ->orderBy('name')
-            ->paginate(12);
+            ->orderBy('name');
+
+        if (in_array($user->role, ['coach', 'instructor'], true)) {
+            $sportIds = Team::query()
+                ->whereIn('id', CoachedTeams::teamIds($user))
+                ->pluck('sport_id')
+                ->unique()
+                ->filter();
+
+            if ($sportIds->isEmpty()) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn('id', $sportIds);
+            }
+        }
+
+        if ($user->role === 'student') {
+            $query->whereHas('students', fn ($q) => $q->where('users.id', $user->id));
+        }
+
+        $sports = $query->paginate(12);
 
         return view('sports.index', compact('sports'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create(): View
     {
         return view('sports.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): RedirectResponse
     {
+        $user = $request->user();
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:120', 'unique:sports,name'],
-            'slug' => ['nullable', 'string', 'max:140', 'unique:sports,slug'],
+            'name' => ['required', 'string', 'max:120', Rule::unique('sports', 'name')->where('organization_id', $user->organization_id)],
+            'slug' => ['nullable', 'string', 'max:140', Rule::unique('sports', 'slug')->where('organization_id', $user->organization_id)],
             'description' => ['nullable', 'string', 'max:5000'],
         ]);
 
         $slug = $validated['slug'] ?? Str::slug($validated['name']);
 
         $sport = Sport::create([
+            'organization_id' => $user->organization_id,
             'name' => $validated['name'],
             'slug' => $slug,
             'description' => $validated['description'] ?? null,
         ]);
 
+        activity()
+            ->performedOn($sport)
+            ->causedBy($user)
+            ->log('sport_created');
+
         return redirect()->route('sports.show', $sport)
             ->with('status', 'Sport created.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Sport $sport): View
     {
         $sport->loadCount('students');
 
         $students = $sport->students()
             ->where('role', 'student')
+            ->where('users.organization_id', auth()->user()->organization_id)
             ->orderBy('name')
             ->paginate(12, ['users.*'], 'students_page');
 
         $availableStudents = User::query()
             ->where('role', 'student')
+            ->where('organization_id', auth()->user()->organization_id)
             ->whereDoesntHave('sports', fn ($q) => $q->where('sports.id', $sport->id))
             ->orderBy('name')
             ->limit(250)
@@ -78,22 +105,18 @@ class SportController extends Controller
         return view('sports.show', compact('sport', 'students', 'availableStudents'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Sport $sport): View
     {
         return view('sports.edit', compact('sport'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Sport $sport): RedirectResponse
     {
+        $user = $request->user();
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:120', Rule::unique('sports', 'name')->ignore($sport->id)],
-            'slug' => ['nullable', 'string', 'max:140', Rule::unique('sports', 'slug')->ignore($sport->id)],
+            'name' => ['required', 'string', 'max:120', Rule::unique('sports', 'name')->where('organization_id', $user->organization_id)->ignore($sport->id)],
+            'slug' => ['nullable', 'string', 'max:140', Rule::unique('sports', 'slug')->where('organization_id', $user->organization_id)->ignore($sport->id)],
             'description' => ['nullable', 'string', 'max:5000'],
         ]);
 
@@ -103,16 +126,23 @@ class SportController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
 
+        activity()
+            ->performedOn($sport)
+            ->causedBy($user)
+            ->log('sport_updated');
+
         return redirect()->route('sports.show', $sport)
             ->with('status', 'Sport updated.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Sport $sport): RedirectResponse
     {
         $sport->delete();
+
+        activity()
+            ->performedOn($sport)
+            ->causedBy(auth()->user())
+            ->log('sport_deleted');
 
         return redirect()->route('sports.index')
             ->with('status', 'Sport deleted.');

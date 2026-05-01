@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class InsightsService
 {
-    public function ensureGenerated(CarbonImmutable $now = null): int
+    public function ensureGenerated(?CarbonImmutable $now = null): int
     {
         $now ??= CarbonImmutable::now();
 
@@ -28,7 +28,7 @@ class InsightsService
      * Generate and persist a fresh batch of insights.
      * Safe to run repeatedly (uses hash_key upsert).
      */
-    public function generate(CarbonImmutable $now = null): int
+    public function generate(?CarbonImmutable $now = null): int
     {
         $now ??= CarbonImmutable::now();
 
@@ -135,10 +135,14 @@ class InsightsService
 
         foreach ($scoreStamina as $key => $rows) {
             $series = $rows->pluck('score')->map(fn ($v) => (float) $v)->values();
-            if ($series->count() < 4) continue;
+            if ($series->count() < 4) {
+                continue;
+            }
 
             $slope = $this->linearSlope($series);
-            if ($slope > -0.20) continue;
+            if ($slope > -0.20) {
+                continue;
+            }
 
             [$userId, $sportId] = explode('|', $key);
             $userId = (int) $userId;
@@ -177,9 +181,13 @@ class InsightsService
 
         foreach ($statRows as $key => $rows) {
             $series = $rows->map(fn ($r) => (float) ($r->metrics['stamina'] ?? 0))->values();
-            if ($series->count() < 4) continue;
+            if ($series->count() < 4) {
+                continue;
+            }
             $slope = $this->linearSlope($series);
-            if ($slope > -0.20) continue;
+            if ($slope > -0.20) {
+                continue;
+            }
 
             [$userId, $sportId] = explode('|', $key);
             $userId = (int) $userId;
@@ -323,7 +331,9 @@ class InsightsService
             $avg1 = (float) $r->avg_w1;
             $pct = (($avg1 - $avg0) / $avg0) * 100.0;
 
-            if ($pct > -15.0) continue;
+            if ($pct > -15.0) {
+                continue;
+            }
 
             $series = PerformanceScore::query()
                 ->where('user_id', $r->user_id)
@@ -402,7 +412,9 @@ class InsightsService
     private function linearSlope(Collection $series): float
     {
         $n = $series->count();
-        if ($n < 2) return 0.0;
+        if ($n < 2) {
+            return 0.0;
+        }
 
         $xs = collect(range(1, $n));
         $xMean = (float) $xs->avg();
@@ -422,10 +434,12 @@ class InsightsService
     private function stddev(Collection $series): float
     {
         $n = $series->count();
-        if ($n < 2) return 0.0;
+        if ($n < 2) {
+            return 0.0;
+        }
         $mean = (float) $series->avg();
         $var = $series->map(fn ($v) => ((float) $v - $mean) ** 2)->sum() / ($n - 1);
+
         return sqrt((float) $var);
     }
 }
-

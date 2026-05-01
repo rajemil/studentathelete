@@ -6,14 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Sport;
 use App\Models\User;
 use App\Services\Analytics\AnalyticsService;
+use App\Support\CoachedTeams;
+use App\Support\RosterAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PredictionController extends Controller
 {
-    public function __construct(private readonly AnalyticsService $analytics)
-    {
-    }
+    public function __construct(private readonly AnalyticsService $analytics) {}
 
     /**
      * GET /api/predictions/athletes/{user}?sport_id=&horizon_days=
@@ -21,20 +22,14 @@ class PredictionController extends Controller
     public function athlete(Request $request, User $user): JsonResponse
     {
         $actor = $request->user();
-
-        // Students can view their own predictions; coaches/admins can view any.
-        if (($actor->role ?? 'student') === 'student' && $actor->id !== $user->id) {
-            abort(403);
-        }
+        $this->assertCanViewAthletePredictions($actor, $user);
 
         $validated = $request->validate([
             'sport_id' => ['nullable', 'integer', 'exists:sports,id'],
             'horizon_days' => ['nullable', 'integer', 'min:1', 'max:90'],
         ]);
 
-        $sport = isset($validated['sport_id'])
-            ? Sport::query()->find($validated['sport_id'])
-            : null;
+        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
 
         $horizonDays = (int) ($validated['horizon_days'] ?? 14);
 
@@ -56,17 +51,13 @@ class PredictionController extends Controller
     public function recommendations(Request $request, User $user): JsonResponse
     {
         $actor = $request->user();
-        if (($actor->role ?? 'student') === 'student' && $actor->id !== $user->id) {
-            abort(403);
-        }
+        $this->assertCanViewAthletePredictions($actor, $user);
 
         $validated = $request->validate([
             'sport_id' => ['nullable', 'integer', 'exists:sports,id'],
         ]);
 
-        $sport = isset($validated['sport_id'])
-            ? Sport::query()->find($validated['sport_id'])
-            : null;
+        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
 
         $bundle = $this->analytics->recommendations($user, $sport);
 
@@ -86,17 +77,21 @@ class PredictionController extends Controller
      */
     public function teamWinProbability(Request $request): JsonResponse
     {
+        $actor = $request->user();
+
         $validated = $request->validate([
-            'sport_id' => ['nullable', 'integer', 'exists:sports,id'],
+            'sport_id' => $this->sportIdRulesForTeamEndpoints($actor),
             'team_a_user_ids' => ['required', 'array', 'min:1', 'max:50'],
             'team_a_user_ids.*' => ['integer', 'exists:users,id'],
             'team_b_user_ids' => ['required', 'array', 'min:1', 'max:50'],
             'team_b_user_ids.*' => ['integer', 'exists:users,id'],
         ]);
 
-        $sport = isset($validated['sport_id'])
-            ? Sport::query()->find($validated['sport_id'])
-            : null;
+        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $this->assertCanUseTeamRosterEndpoints($actor, $sport, [
+            ...$validated['team_a_user_ids'],
+            ...$validated['team_b_user_ids'],
+        ]);
 
         $teamA = User::query()->whereIn('id', $validated['team_a_user_ids'])->get(['id', 'name', 'role']);
         $teamB = User::query()->whereIn('id', $validated['team_b_user_ids'])->get(['id', 'name', 'role']);
@@ -128,16 +123,17 @@ class PredictionController extends Controller
      */
     public function strongestLineup(Request $request): JsonResponse
     {
+        $actor = $request->user();
+
         $validated = $request->validate([
-            'sport_id' => ['nullable', 'integer', 'exists:sports,id'],
+            'sport_id' => $this->sportIdRulesForTeamEndpoints($actor),
             'candidate_user_ids' => ['required', 'array', 'min:1', 'max:100'],
             'candidate_user_ids.*' => ['integer', 'exists:users,id'],
             'lineup_size' => ['required', 'integer', 'min:1', 'max:30'],
         ]);
 
-        $sport = isset($validated['sport_id'])
-            ? Sport::query()->find($validated['sport_id'])
-            : null;
+        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $this->assertCanUseTeamRosterEndpoints($actor, $sport, $validated['candidate_user_ids']);
 
         $candidates = User::query()
             ->whereIn('id', $validated['candidate_user_ids'])
@@ -152,5 +148,109 @@ class PredictionController extends Controller
             'lineup' => $result['lineup'],
         ]);
     }
-}
 
+    private function assertCanViewAthletePredictions(User $actor, User $target): void
+    {
+        abort_unless(RosterAccess::actorMayViewAthlete($actor, $target), 403);
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private function sportIdRulesForTeamEndpoints(User $actor): array
+    {
+        $role = $actor->role ?? 'student';
+
+        if ($role === 'admin') {
+            return ['nullable', 'integer', 'exists:sports,id'];
+        }
+
+        return ['required', 'integer', 'exists:sports,id'];
+    }
+
+    private function resolveSportForActor(User $actor, ?int $sportId): ?Sport
+    {
+        if ($sportId === null) {
+            return null;
+        }
+
+        $sport = Sport::query()->whereKey($sportId)->first();
+        if (! $sport) {
+            return null;
+        }
+
+        if ($actor->organization_id === null || $sport->organization_id === null) {
+            abort(403);
+        }
+
+        if ((int) $actor->organization_id !== (int) $sport->organization_id) {
+            abort(403);
+        }
+
+        return $sport;
+    }
+
+    /**
+     * @param  list<int>  $userIds
+     */
+    private function assertCanUseTeamRosterEndpoints(User $actor, ?Sport $sport, array $userIds): void
+    {
+        $role = $actor->role ?? 'student';
+
+        if ($actor->organization_id === null) {
+            abort(403);
+        }
+
+        $uniqueIds = array_values(array_unique($userIds));
+        $users = User::query()->whereIn('id', $uniqueIds)->get(['id', 'organization_id', 'role']);
+        if ($users->count() !== count($uniqueIds)) {
+            abort(403);
+        }
+
+        foreach ($users as $u) {
+            if ($u->organization_id === null || (int) $u->organization_id !== (int) $actor->organization_id) {
+                abort(403);
+            }
+        }
+
+        if ($role === 'admin') {
+            return;
+        }
+
+        if (! in_array($role, ['coach', 'instructor'], true)) {
+            abort(403);
+        }
+
+        if (! $sport instanceof Sport) {
+            abort(403);
+        }
+
+        $teamIdsForSport = CoachedTeams::teamIds($actor);
+
+        $allowedTeamStudentIds = DB::table('team_memberships')
+            ->join('teams', 'teams.id', '=', 'team_memberships.team_id')
+            ->whereIn('team_memberships.team_id', $teamIdsForSport)
+            ->where('teams.sport_id', $sport->id)
+            ->where('teams.organization_id', $actor->organization_id)
+            ->distinct()
+            ->pluck('team_memberships.user_id');
+
+        foreach ($users as $u) {
+            if ((int) $u->id === (int) $actor->id) {
+                continue;
+            }
+
+            if (($u->role ?? 'student') !== 'student') {
+                abort(403);
+            }
+
+            if (! $allowedTeamStudentIds->contains((int) $u->id)) {
+                abort(403);
+            }
+        }
+
+        if ($teamIdsForSport->isEmpty()) {
+            abort(403);
+        }
+    }
+}

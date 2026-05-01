@@ -87,10 +87,13 @@ class AnalyticsService
      */
     public function teamStrengthScore(Collection $athletes, ?Sport $sport): float
     {
-        if ($athletes->isEmpty()) return 0.0;
+        if ($athletes->isEmpty()) {
+            return 0.0;
+        }
 
         $scores = $athletes->map(function (User $u) use ($sport) {
             $pred = $this->predictAthletePerformance($u, $sport, 14);
+
             return (float) ($pred['predicted_score'] ?? 0);
         });
 
@@ -105,6 +108,7 @@ class AnalyticsService
         $diff = $teamAScore - $teamBScore;
         $scale = 6.0; // flatter => less extreme probabilities
         $p = 1.0 / (1.0 + exp(-$diff / $scale));
+
         return round($p * 100.0, 1);
     }
 
@@ -117,6 +121,7 @@ class AnalyticsService
 
         $ranked = $candidates->map(function (User $u) use ($sport) {
             $pred = $this->predictAthletePerformance($u, $sport, 14);
+
             return [
                 'id' => $u->id,
                 'name' => $u->name,
@@ -232,13 +237,16 @@ class AnalyticsService
     {
         // More recent points get higher weight: 1..n
         $n = $values->count();
-        if ($n === 0) return 0.0;
+        if ($n === 0) {
+            return 0.0;
+        }
         $weights = collect(range(1, $n));
         $sumW = (float) $weights->sum();
         $sum = 0.0;
         foreach ($values as $i => $v) {
             $sum += (float) $v * ((float) $weights[$i] / $sumW);
         }
+
         return $sum;
     }
 
@@ -246,7 +254,9 @@ class AnalyticsService
     {
         // x = 1..n, y = score
         $n = $series->count();
-        if ($n < 2) return 0.0;
+        if ($n < 2) {
+            return 0.0;
+        }
 
         $xs = collect(range(1, $n));
         $xMean = (float) $xs->avg();
@@ -266,9 +276,12 @@ class AnalyticsService
     private function stddev(Collection $series): float
     {
         $n = $series->count();
-        if ($n < 2) return 0.0;
+        if ($n < 2) {
+            return 0.0;
+        }
         $mean = (float) $series->avg();
         $var = $series->map(fn ($v) => ((float) $v - $mean) ** 2)->sum() / ($n - 1);
+
         return sqrt((float) $var);
     }
 
@@ -277,4 +290,3 @@ class AnalyticsService
         return max($min, min($max, $v));
     }
 }
-
