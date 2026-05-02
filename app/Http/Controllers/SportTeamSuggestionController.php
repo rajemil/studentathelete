@@ -44,7 +44,7 @@ class SportTeamSuggestionController extends Controller
             ->get(['id', 'name', 'email']);
 
         if ($students->isEmpty()) {
-            return redirect()->route('sports.show', $sport)
+            return $this->redirectRoutePreservingModal($request, 'sports.show', $sport)
                 ->with('status', 'Assign students to this sport first.');
         }
 

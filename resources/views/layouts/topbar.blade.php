@@ -1,17 +1,23 @@
+@php
+    $isModal = request()->boolean('modal');
+@endphp
+
 <div class="sticky top-0 z-30">
     <div class="rounded-2xl bg-white border border-gray-200/60 shadow-sm transition dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10">
         <div class="h-16 px-4 sm:px-6 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <button
-                    type="button"
-                    class="lg:hidden h-10 w-10 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/70 dark:bg-white/5 text-gray-700 dark:text-gray-200 hover:bg-white transition"
-                    x-on:click="$dispatch('toggle-sidebar')"
-                    aria-label="Open navigation"
-                >
-                    <svg class="h-5 w-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
+                @unless($isModal)
+                    <button
+                        type="button"
+                        class="lg:hidden h-10 w-10 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/70 dark:bg-white/5 text-gray-700 dark:text-gray-200 hover:bg-white transition"
+                        x-on:click="$dispatch('toggle-sidebar')"
+                        aria-label="Open navigation"
+                    >
+                        <svg class="h-5 w-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                @endunless
 
                 @isset($header)
                     <div class="min-w-0">
@@ -20,6 +26,7 @@
                 @endisset
             </div>
 
+            @unless($isModal)
             <div class="flex items-center gap-2">
                 <!-- Theme toggle -->
                 <button
@@ -116,6 +123,7 @@
                     </a>
                 </div>
             </div>
+            @endunless
         </div>
     </div>
 </div>

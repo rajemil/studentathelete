@@ -61,8 +61,11 @@ Route::middleware(['auth', 'org'])->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+        Route::get('/admin/users/create', [AdminUserController::class, 'create'])->name('admin.users.create');
+        Route::post('/admin/users', [AdminUserController::class, 'store'])->name('admin.users.store');
         Route::get('/admin/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+        Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
         Route::get('/admin/reports', AdminReportsController::class)->name('admin.reports.index');
         Route::get('/admin/reports/performance-scores.csv', [AdminReportsController::class, 'export'])
             ->name('admin.reports.performance_scores_csv');

@@ -1,36 +1,90 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-                <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">{{ $sport->name }}</h2>
-                <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {{ $sport->students_count }} students assigned
-                </div>
-            </div>
-            <div class="flex items-center gap-2 flex-wrap">
-                <a href="{{ route('sports.scores.index', $sport) }}" class="inline-flex items-center rounded-xl border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/10 transition">
-                    Enter scores
-                </a>
-                <a href="{{ route('sports.rankings.index', $sport) }}" class="inline-flex items-center rounded-xl border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/10 transition">
-                    Rankings
-                </a>
-                <a href="{{ route('sports.team_suggestions.index', $sport) }}" class="inline-flex items-center rounded-xl border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/10 transition">
-                    Team suggestions
-                </a>
-                <a href="{{ route('sports.edit', $sport) }}" class="inline-flex items-center rounded-xl bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] px-4 py-2 text-sm font-semibold text-white shadow-sm glow-border-orange hover:shadow-md transition">
-                    Edit
-                </a>
+        <div class="min-w-0">
+            <div class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                Sport: {{ $sport->name }}
             </div>
         </div>
     </x-slot>
 
-    <div class="py-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="space-y-6" x-data="{ actionOpen: false, actionTitle: '', actionSrc: '' }">
+            <div class="space-y-3">
+                @unless(request()->boolean('modal'))
+                    <a href="{{ route('sports.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 18l-6-6 6-6"></path>
+                        </svg>
+                        Back to sports
+                    </a>
+                @endunless
+
+                <div class="min-w-0">
+                    <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 break-words">
+                        {{ $sport->name }}
+                    </h2>
+                    <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ $sport->students_count }} students assigned
+                    </div>
+                </div>
+            </div>
+
             @if (session('status'))
                 <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
                     {{ session('status') }}
                 </div>
             @endif
+
+            <!-- Action bar (kept layout) -->
+            <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 shadow-sm px-4 py-3">
+                <div class="flex flex-wrap gap-2">
+                    <a
+                        href="{{ route('sports.scores.index', $sport) }}?modal=1"
+                        @click.prevent="actionTitle = 'Enter scores'; actionSrc = $event.currentTarget.href; actionOpen = true"
+                        class="inline-flex items-center rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/10 transition"
+                    >
+                        Enter scores
+                    </a>
+                    <a
+                        href="{{ route('sports.rankings.index', $sport) }}?modal=1"
+                        @click.prevent="actionTitle = 'Rankings'; actionSrc = $event.currentTarget.href; actionOpen = true"
+                        class="inline-flex items-center rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/10 transition"
+                    >
+                        Rankings
+                    </a>
+                    <a
+                        href="{{ route('sports.team_suggestions.index', $sport) }}?modal=1"
+                        @click.prevent="actionTitle = 'Team suggestions'; actionSrc = $event.currentTarget.href; actionOpen = true"
+                        class="inline-flex items-center rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-white/10 transition"
+                    >
+                        Team suggestions
+                    </a>
+                    <a
+                        href="{{ route('sports.edit', $sport) }}?modal=1"
+                        @click.prevent="actionTitle = 'Edit sport'; actionSrc = $event.currentTarget.href; actionOpen = true"
+                        class="inline-flex items-center rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#FFB24D] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95 transition"
+                    >
+                        Edit
+                    </a>
+                </div>
+            </div>
+
+            <!-- Shared action modal (renders existing pages without navigation) -->
+            <div x-show="actionOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/60" @click="actionOpen = false"></div>
+                <div class="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-white dark:bg-gray-900 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+                    <div class="px-6 py-4 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between shrink-0">
+                        <div class="min-w-0">
+                            <div class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate" x-text="actionTitle"></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400 truncate">{{ $sport->name }}</div>
+                        </div>
+                        <button type="button" class="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:underline" @click="actionOpen = false">Close</button>
+                    </div>
+
+                    <div class="flex-1 bg-white dark:bg-gray-950">
+                        <iframe :src="actionSrc" class="w-full h-[80vh] border-0 bg-white dark:bg-gray-950"></iframe>
+                    </div>
+                </div>
+            </div>
 
             @if($sport->description)
                 <div class="dash-card rounded-3xl p-6">
@@ -94,6 +148,5 @@
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 </x-app-layout>

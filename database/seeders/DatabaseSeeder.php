@@ -28,17 +28,37 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Keep seeds deterministic-ish without being brittle.
         $faker = fake();
         $now = Carbon::now();
 
-        // Ensure the default org exists (migration normally creates it).
+        $seedDemo = filter_var(env('SEED_DEMO_DATA', false), FILTER_VALIDATE_BOOL);
+
+        // Always seed the minimal "core" setup so the app can be used manually.
         $defaultOrg = Organization::query()->firstOrCreate(
             ['slug' => 'default'],
             ['name' => 'Default Organization']
         );
 
-        // Create a second organization for multi-tenant sanity checks.
+        $admin = User::query()->firstOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'organization_id' => $defaultOrg->id,
+                'role' => 'admin',
+                'name' => 'Raje Mil',
+                'password' => Hash::make('password'),
+                'email_verified_at' => $now,
+            ]
+        );
+
+        if (DB::getSchemaBuilder()->hasTable('activity_log')) {
+            activity()->causedBy($admin)->withProperties(['organization_id' => $defaultOrg->id])->log('seed_core_completed');
+        }
+
+        if (! $seedDemo) {
+            return;
+        }
+
+        // DEMO DATA (only when SEED_DEMO_DATA=true)
         $secondOrg = Organization::query()->firstOrCreate(
             ['slug' => 'rival-academy'],
             ['name' => 'Rival Academy']
@@ -47,7 +67,6 @@ class DatabaseSeeder extends Seeder
         foreach ([$defaultOrg, $secondOrg] as $org) {
             $orgId = $org->id;
 
-            // Users
             $admin = User::factory()->create([
                 'organization_id' => $orgId,
                 'role' => 'admin',
@@ -75,7 +94,6 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => $now,
             ]);
 
-            // Profiles (kept lightweight; enough to drive UI + injury-risk computations)
             foreach ($students as $s) {
                 Profile::query()->create([
                     'user_id' => $s->id,
@@ -104,7 +122,6 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // Sports
             $sportDefs = [
                 ['name' => 'Basketball', 'slug' => 'basketball'],
                 ['name' => 'Soccer', 'slug' => 'soccer'],
@@ -116,12 +133,11 @@ class DatabaseSeeder extends Seeder
                 return Sport::query()->create([
                     'organization_id' => $orgId,
                     'name' => $def['name'],
-                    'slug' => $def['slug'].'-'.$orgId, // unique per org
+                    'slug' => $def['slug'].'-'.$orgId,
                     'description' => null,
                 ]);
             });
 
-            // Teams + rosters + assignments
             foreach ($sports as $sport) {
                 $primaryCoach = $coaches->random();
 
@@ -148,7 +164,6 @@ class DatabaseSeeder extends Seeder
                     'ends_on' => null,
                 ]);
 
-                // Students join sport and get split across teams
                 $sportStudents = $students->shuffle()->take(10)->values();
                 $sport->students()->syncWithoutDetaching($sportStudents->pluck('id')->all());
 
@@ -167,7 +182,6 @@ class DatabaseSeeder extends Seeder
                     ])->all()
                 );
 
-                // Scores (recent 30 days)
                 foreach ($sportStudents as $student) {
                     foreach (range(0, 6) as $i) {
                         $date = $now->copy()->subDays($i * 4)->toDateString();
@@ -184,7 +198,6 @@ class DatabaseSeeder extends Seeder
                         ]);
                     }
 
-                    // Participation logs (training/recovery)
                     foreach (range(0, 10) as $i) {
                         ParticipationLog::query()->create([
                             'organization_id' => $orgId,
@@ -197,7 +210,6 @@ class DatabaseSeeder extends Seeder
                         ]);
                     }
 
-                    // Player stats (simple metrics blob)
                     PlayerStat::query()->create([
                         'user_id' => $student->id,
                         'sport_id' => $sport->id,
@@ -212,7 +224,6 @@ class DatabaseSeeder extends Seeder
                     ]);
                 }
 
-                // Injury records (a few per sport)
                 foreach ($sportStudents->shuffle()->take(2) as $student) {
                     InjuryRecord::query()->create([
                         'organization_id' => $orgId,
@@ -226,7 +237,6 @@ class DatabaseSeeder extends Seeder
                     ]);
                 }
 
-                // Events + participants
                 $event = Event::query()->create([
                     'title' => $sport->name.' Training',
                     'description' => 'Seeded training session',
@@ -247,9 +257,8 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // Some activity log entries (if activitylog is installed/migrated)
             if (DB::getSchemaBuilder()->hasTable('activity_log')) {
-                activity()->causedBy($admin)->withProperties(['organization_id' => $orgId])->log('seed_completed');
+                activity()->causedBy($admin)->withProperties(['organization_id' => $orgId])->log('seed_demo_completed');
             }
         }
     }

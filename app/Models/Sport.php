@@ -11,6 +11,7 @@ class Sport extends Model
 {
     protected $fillable = [
         'organization_id',
+        'instructor_user_id',
         'name',
         'slug',
         'description',
@@ -21,9 +22,16 @@ class Sport extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'instructor_user_id');
+    }
+
     public function students(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withTimestamps();
+        // Only student participants (faculty sport assignments use separate admin UI logic)
+        return $this->belongsToMany(User::class)->withTimestamps()
+            ->where('users.role', 'student');
     }
 
     public function teams(): HasMany

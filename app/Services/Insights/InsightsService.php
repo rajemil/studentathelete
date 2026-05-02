@@ -402,11 +402,32 @@ class InsightsService
             'severity' => $data['severity'],
             'title' => $data['title'],
             'message' => $data['message'],
-            'payload' => $data['payload'] ?? null,
+            // Note: upsert uses the query builder and bypasses Eloquent casts,
+            // so we must JSON-encode arrays/objects ourselves for Postgres jsonb.
+            'payload' => array_key_exists('payload', $data)
+                ? $this->normalizeJsonPayload($data['payload'])
+                : null,
             'computed_at' => $data['computed_at'],
             'created_at' => CarbonImmutable::now(),
             'updated_at' => CarbonImmutable::now(),
         ];
+    }
+
+    private function normalizeJsonPayload(mixed $payload): ?string
+    {
+        if ($payload === null) {
+            return null;
+        }
+
+        if (is_string($payload)) {
+            return $payload;
+        }
+
+        if (is_array($payload) || is_object($payload)) {
+            return json_encode($payload, JSON_THROW_ON_ERROR);
+        }
+
+        return json_encode(['value' => $payload], JSON_THROW_ON_ERROR);
     }
 
     private function linearSlope(Collection $series): float

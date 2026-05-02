@@ -127,7 +127,7 @@ class PerformanceScoreController extends Controller
 
         $student->notify(new NewScoreNotification($score));
 
-        return redirect()->route('sports.scores.index', $sport)
+        return $this->redirectRoutePreservingModal($request, 'sports.scores.index', $sport)
             ->with('status', 'Score saved.');
     }
 }

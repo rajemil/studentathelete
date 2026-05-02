@@ -80,7 +80,7 @@ class SportController extends Controller
             ->causedBy($user)
             ->log('sport_created');
 
-        return redirect()->route('sports.show', $sport)
+        return $this->redirectRoutePreservingModal($request, 'sports.show', $sport)
             ->with('status', 'Sport created.');
     }
 
@@ -131,7 +131,7 @@ class SportController extends Controller
             ->causedBy($user)
             ->log('sport_updated');
 
-        return redirect()->route('sports.show', $sport)
+        return $this->redirectRoutePreservingModal($request, 'sports.show', $sport)
             ->with('status', 'Sport updated.');
     }
 

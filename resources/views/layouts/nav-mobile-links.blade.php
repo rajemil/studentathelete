@@ -13,7 +13,7 @@
 </a>
 
 @if($isAdmin)
-    <a href="{{ route('admin.users.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Users & roles</a>
+    <a href="{{ route('admin.users.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Faculty management</a>
 @endif
 
 @if($staffSports)

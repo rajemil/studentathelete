@@ -5,16 +5,18 @@
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Team suggestions</h2>
                 <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ $sport->name }} · Strongest team generator / balanced draft</div>
             </div>
-            <a href="{{ route('sports.show', $sport) }}" class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
-                Back
-            </a>
+            @unless(request()->boolean('modal'))
+                <a href="{{ route('sports.show', $sport) }}" class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
+                    Back
+                </a>
+            @endunless
         </div>
     </x-slot>
 
     <div class="py-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <div class="rounded-xl bg-white dark:bg-gray-800 shadow p-6">
-                <form method="POST" action="{{ route('sports.team_suggestions.generate', $sport) }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <form method="POST" action="{{ route('sports.team_suggestions.generate', $sport) }}{{ request()->boolean('modal') ? '?modal=1' : '' }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     @csrf
 
                     <div>

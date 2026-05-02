@@ -43,7 +43,7 @@
                 </a>
 
                 @if($isAdmin)
-                    <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">User management</div>
+                    <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Faculty management</div>
                     <a href="{{ route('admin.users.index') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
                             {{ request()->routeIs('admin.users.*') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
@@ -55,7 +55,7 @@
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
                         </span>
-                        Users & roles
+                        Faculty management
                     </a>
 
                     <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Team & sport</div>

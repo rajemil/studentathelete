@@ -21,6 +21,11 @@ class UserPolicy
         return $user->role === 'admin' && $this->sameOrganization($user, $model);
     }
 
+    public function delete(User $user, User $model): bool
+    {
+        return $user->role === 'admin' && $this->sameOrganization($user, $model);
+    }
+
     private function sameOrganization(User $user, User $model): bool
     {
         return $user->organization_id !== null

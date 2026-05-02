@@ -63,49 +63,63 @@
             <div class="absolute inset-0 noise opacity-20"></div>
         </div>
 
-        <div class="min-h-screen relative z-10">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-                <div class="flex gap-6">
-                    @include('layouts.sidebar')
+        @php
+            $isModal = request()->boolean('modal');
+        @endphp
 
-                    <!-- Mobile sidebar overlay -->
-                    <div class="lg:hidden">
-                        <div
-                            class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                            x-show="mobileNavOpen"
-                            x-transition.opacity
-                            x-on:click="mobileNavOpen = false"
-                        ></div>
-                        <div
-                            class="fixed left-3 right-12 top-3 z-50"
-                            x-show="mobileNavOpen"
-                            x-transition
-                        >
-                            <div class="rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur border border-gray-200/60 dark:border-white/10 shadow-xl p-3">
-                                <div class="flex items-center justify-between px-2 py-2">
-                                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Navigation</div>
-                                    <button type="button" class="h-9 w-9 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5" x-on:click="mobileNavOpen=false" aria-label="Close">
-                                        <svg class="h-5 w-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="px-2 pb-2 max-h-[70vh] overflow-y-auto">
-                                    @include('layouts.nav-mobile-links')
+        <div class="min-h-screen relative z-10">
+            @if($isModal)
+                <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
+                    @include('layouts.topbar')
+
+                    <main>
+                        {{ $slot }}
+                    </main>
+                </div>
+            @else
+                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+                    <div class="flex gap-6">
+                        @include('layouts.sidebar')
+
+                        <!-- Mobile sidebar overlay -->
+                        <div class="lg:hidden">
+                            <div
+                                class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+                                x-show="mobileNavOpen"
+                                x-transition.opacity
+                                x-on:click="mobileNavOpen = false"
+                            ></div>
+                            <div
+                                class="fixed left-3 right-12 top-3 z-50"
+                                x-show="mobileNavOpen"
+                                x-transition
+                            >
+                                <div class="rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur border border-gray-200/60 dark:border-white/10 shadow-xl p-3">
+                                    <div class="flex items-center justify-between px-2 py-2">
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Navigation</div>
+                                        <button type="button" class="h-9 w-9 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5" x-on:click="mobileNavOpen=false" aria-label="Close">
+                                            <svg class="h-5 w-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="px-2 pb-2 max-h-[70vh] overflow-y-auto">
+                                        @include('layouts.nav-mobile-links')
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex-1 min-w-0">
-                        @include('layouts.topbar')
+                        <div class="flex-1 min-w-0">
+                            @include('layouts.topbar')
 
-                        <main class="mt-6">
-                            {{ $slot }}
-                        </main>
+                            <main class="mt-6">
+                                {{ $slot }}
+                            </main>
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endif
         </div>
     </body>
 </html>

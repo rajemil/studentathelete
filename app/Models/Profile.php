@@ -9,9 +9,11 @@ class Profile extends Model
 {
     protected $fillable = [
         'user_id',
+        'birthdate',
         'age',
         'gender',
         'address',
+        'photo_path',
         'height_cm',
         'weight_kg',
         'bmi',
@@ -27,6 +29,7 @@ class Profile extends Model
     protected function casts(): array
     {
         return [
+            'birthdate' => 'date',
             'sports_interested' => 'array',
             'height_cm' => 'decimal:2',
             'weight_kg' => 'decimal:2',
