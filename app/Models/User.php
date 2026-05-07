@@ -72,6 +72,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Sport::class)->withTimestamps();
     }
 
+    public function sportApplications(): HasMany
+    {
+        return $this->hasMany(SportApplication::class);
+    }
+
     /**
      * Teams the (student) user is a member of (ranked via pivot).
      */

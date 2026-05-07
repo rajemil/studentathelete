@@ -9,6 +9,7 @@ class Insight extends Model
 {
     protected $fillable = [
         'hash_key',
+        'organization_id',
         'user_id',
         'sport_id',
         'team_id',
@@ -26,6 +27,11 @@ class Insight extends Model
             'payload' => 'array',
             'computed_at' => 'datetime',
         ];
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function user(): BelongsTo

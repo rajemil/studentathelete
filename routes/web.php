@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminReportsController;
 use App\Http\Controllers\Admin\AdminSystemConfigController;
+use App\Http\Controllers\Admin\AdminStudentController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Dashboard\AdminDashboardController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Dashboard\StudentDashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PerformanceScoreController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SportApplicationController;
 use App\Http\Controllers\SportController;
 use App\Http\Controllers\SportRankingController;
 use App\Http\Controllers\SportStudentController;
@@ -66,6 +68,12 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::get('/admin/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
         Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+
+        Route::get('/admin/students', [AdminStudentController::class, 'index'])->name('admin.students.index');
+        Route::post('/admin/students', [AdminStudentController::class, 'store'])->name('admin.students.store');
+        Route::patch('/admin/students/{user}', [AdminStudentController::class, 'update'])->name('admin.students.update');
+        Route::delete('/admin/students/{user}', [AdminStudentController::class, 'destroy'])->name('admin.students.destroy');
+
         Route::get('/admin/reports', AdminReportsController::class)->name('admin.reports.index');
         Route::get('/admin/reports/performance-scores.csv', [AdminReportsController::class, 'export'])
             ->name('admin.reports.performance_scores_csv');
@@ -82,7 +90,8 @@ Route::middleware(['auth', 'org'])->group(function () {
 
     Route::middleware('role:student')->group(function () {
         Route::get('/student/sports', [StudentSportBrowseController::class, 'index'])->name('student.sports.index');
-        Route::post('/student/sports/{sport}/join', [StudentSportBrowseController::class, 'join'])->name('student.sports.join');
+        Route::post('/student/sports/{sport}/apply', [StudentSportBrowseController::class, 'apply'])->name('student.sports.apply');
+        Route::post('/student/sports/{sport}/withdraw', [StudentSportBrowseController::class, 'withdraw'])->name('student.sports.withdraw');
         Route::delete('/student/sports/{sport}/leave', [StudentSportBrowseController::class, 'leave'])->name('student.sports.leave');
 
         Route::get('/student/participation-logs', [StudentParticipationLogsController::class, 'index'])->name('student.participation_logs.index');
@@ -98,6 +107,11 @@ Route::middleware(['auth', 'org'])->group(function () {
             ->name('sports.students.store');
         Route::delete('sports/{sport}/students/{user}', [SportStudentController::class, 'destroy'])
             ->name('sports.students.destroy');
+
+        Route::post('sports/{sport}/applications/{application}/approve', [SportApplicationController::class, 'approve'])
+            ->name('sports.applications.approve');
+        Route::post('sports/{sport}/applications/{application}/reject', [SportApplicationController::class, 'reject'])
+            ->name('sports.applications.reject');
 
         Route::get('sports/{sport}/rankings', [SportRankingController::class, 'index'])
             ->name('sports.rankings.index');

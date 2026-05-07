@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateAiInsightNarrative;
+use App\Jobs\GenerateAiTrainingPlan;
 use App\Models\PerformanceScore;
 use App\Models\Sport;
 use App\Models\User;
 use App\Notifications\NewScoreNotification;
 use App\Notifications\PerformanceWarningNotification;
-use App\Notifications\TrainingScheduleNotification;
+use App\Services\AI\AiManager;
 use App\Services\InjuryRisk\InjuryRiskService;
 use App\Services\Insights\InsightsService;
 use App\Services\Training\TrainingRecommendationService;
@@ -59,7 +61,7 @@ class PerformanceScoreController extends Controller
         ]);
     }
 
-    public function store(Request $request, Sport $sport, InsightsService $insightsService, InjuryRiskService $injuryRisk, TrainingRecommendationService $training): RedirectResponse
+    public function store(Request $request, Sport $sport, InsightsService $insightsService, InjuryRiskService $injuryRisk): RedirectResponse
     {
         $this->authorize('recordScores', $sport);
 
@@ -121,8 +123,21 @@ class PerformanceScoreController extends Controller
         }
 
         if ($student->profile) {
-            $plan = $training->generateWeeklyPlan($student, $sport, $now);
-            $student->notify(new TrainingScheduleNotification($plan));
+            GenerateAiTrainingPlan::dispatch(
+                $student->id,
+                $sport->id,
+                true,
+                (int) $student->organization_id,
+            );
+        }
+
+        if (AiManager::isLlmAvailable()) {
+            if (\Illuminate\Support\Facades\Cache::add('ai_insight_user_'.$student->id, true, 600)) {
+                GenerateAiInsightNarrative::dispatch((int) $student->organization_id, $student->id);
+            }
+            if (\Illuminate\Support\Facades\Cache::add('ai_insight_org_'.$student->organization_id, true, 600)) {
+                GenerateAiInsightNarrative::dispatch((int) $student->organization_id, null);
+            }
         }
 
         $student->notify(new NewScoreNotification($score));

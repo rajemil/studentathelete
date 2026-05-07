@@ -15,7 +15,18 @@ class Sport extends Model
         'name',
         'slug',
         'description',
+        'qual_min_age',
+        'qual_max_age',
+        'qual_min_height_cm',
+        'qual_allowed_genders',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'qual_allowed_genders' => 'array',
+        ];
+    }
 
     public function organization(): BelongsTo
     {
@@ -42,5 +53,10 @@ class Sport extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(SportApplication::class);
     }
 }

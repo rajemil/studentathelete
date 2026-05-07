@@ -9,6 +9,11 @@
     };
 @endphp
 
+@php
+    $narrativeRow = $insights->firstWhere('type', 'narrative_summary');
+    $insightCards = $insights->filter(fn ($i) => $i->type !== 'narrative_summary')->values();
+@endphp
+
 <div class="dash-card rounded-3xl overflow-hidden">
     <div class="border-b border-gray-200/60 dark:border-white/10 px-6 py-5 flex items-center justify-between">
         <div>
@@ -20,8 +25,18 @@
         </div>
     </div>
 
+    @if($narrativeRow && is_array($narrativeRow->payload) && filled(data_get($narrativeRow->payload, 'narrative')))
+        <div class="px-6 py-4 border-b border-gray-200/60 dark:border-white/10 bg-gray-50/80 dark:bg-white/[0.03]">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">AI summary</div>
+            <p class="mt-2 text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{{ data_get($narrativeRow->payload, 'narrative') }}</p>
+            @if(filled(data_get($narrativeRow->payload, 'actionable')))
+                <p class="mt-2 text-sm font-medium text-[#FF7A1A] dark:text-[#FFB24D]">{{ data_get($narrativeRow->payload, 'actionable') }}</p>
+            @endif
+        </div>
+    @endif
+
     <div class="divide-y divide-gray-200 dark:divide-white/10">
-        @forelse($insights as $insight)
+        @forelse($insightCards as $insight)
             <div class="px-5 py-4 flex items-start gap-3">
                 <span class="mt-0.5 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $badge($insight->severity) }}">
                     {{ strtoupper($insight->severity) }}
@@ -37,7 +52,7 @@
             </div>
         @empty
             <div class="px-5 py-8 text-sm text-gray-600 dark:text-gray-400">
-                No insights yet. Add some scores and run `php artisan insights:generate`.
+                No insight cards yet. Add some scores and run `php artisan insights:generate`.
             </div>
         @endforelse
     </div>

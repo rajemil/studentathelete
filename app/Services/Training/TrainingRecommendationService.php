@@ -18,10 +18,9 @@ class TrainingRecommendationService
     ) {}
 
     /**
-     * Generate / upsert a weekly plan for a user (optionally sport-specific).
-     * Returns the created/updated TrainingRecommendation.
+     * Rule-based weekly plan (used as fallback and before optional LLM enrichment).
      */
-    public function generateWeeklyPlan(User $athlete, ?Sport $sport = null, ?CarbonImmutable $now = null): TrainingRecommendation
+    public function generateWeeklyPlanHeuristic(User $athlete, ?Sport $sport = null, ?CarbonImmutable $now = null): TrainingRecommendation
     {
         $now ??= CarbonImmutable::now();
 
@@ -88,6 +87,14 @@ class TrainingRecommendationService
         $rec->save();
 
         return $rec;
+    }
+
+    /**
+     * Alias for {@see generateWeeklyPlanHeuristic()} (console commands / legacy callers).
+     */
+    public function generateWeeklyPlan(User $athlete, ?Sport $sport = null, ?CarbonImmutable $now = null): TrainingRecommendation
+    {
+        return $this->generateWeeklyPlanHeuristic($athlete, $sport, $now);
     }
 
     private function nextRelevantEvent(User $athlete, ?Sport $sport, CarbonImmutable $now): ?Event

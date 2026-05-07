@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateAiInsightNarrative;
 use App\Models\Event;
 use App\Models\Insight;
 use App\Models\PerformanceScore;
@@ -10,8 +11,10 @@ use App\Models\Sport;
 use App\Models\Team;
 use App\Models\TrainingRecommendation;
 use App\Models\User;
+use App\Services\AI\AiManager;
 use App\Services\Insights\InsightsService;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -23,6 +26,10 @@ class AdminDashboardController extends Controller
         $orgId = auth()->user()->organization_id;
 
         $insightsService->ensureGenerated($now);
+
+        if (AiManager::isLlmAvailable() && Cache::add('ai_insight_narr_org_'.$orgId, true, 3600)) {
+            GenerateAiInsightNarrative::dispatch($orgId, null);
+        }
 
         $countsByRole = User::query()
             ->where('organization_id', $orgId)
@@ -123,8 +130,11 @@ class AdminDashboardController extends Controller
 
         $insights = Insight::query()
             ->where(function ($q) use ($orgId) {
-                $q->whereNull('user_id')
-                    ->orWhereHas('user', fn ($u) => $u->where('organization_id', $orgId));
+                $q->whereHas('user', fn ($u) => $u->where('organization_id', $orgId))
+                    ->orWhere(function ($q2) use ($orgId) {
+                        $q2->whereNull('user_id')
+                            ->where('organization_id', $orgId);
+                    });
             })
             ->orderByDesc('computed_at')
             ->limit(6)

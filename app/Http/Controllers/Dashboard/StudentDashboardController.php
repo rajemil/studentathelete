@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateAiInsightNarrative;
+use App\Jobs\GenerateAiTrainingPlan;
 use App\Models\Event;
 use App\Models\Insight;
 use App\Models\PerformanceScore;
+use App\Models\Sport;
+use App\Models\SportApplication;
 use App\Models\TrainingRecommendation;
+use App\Services\AI\AiManager;
 use App\Services\InjuryRisk\InjuryRiskService;
 use App\Services\Insights\InsightsService;
 use App\Services\Training\TrainingRecommendationService;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class StudentDashboardController extends Controller
@@ -81,7 +87,13 @@ class StudentDashboardController extends Controller
             ->get();
 
         if ($user->profile && $recommendations->isEmpty()) {
-            $training->generateWeeklyPlan($user, null, $now);
+            $training->generateWeeklyPlanHeuristic($user, null, $now);
+            if (AiManager::isLlmAvailable()) {
+                GenerateAiTrainingPlan::dispatch($user->id, null, false, (int) $user->organization_id);
+                if (Cache::add('ai_insight_user_'.$user->id, true, 600)) {
+                    GenerateAiInsightNarrative::dispatch((int) $user->organization_id, $user->id);
+                }
+            }
             $recommendations = TrainingRecommendation::query()
                 ->where('user_id', $user->id)
                 ->orderByDesc('created_at')
@@ -107,6 +119,14 @@ class StudentDashboardController extends Controller
             'injury_risk' => $user->profile?->injury_risk,
         ];
 
-        return view('dashboards.student', compact('kpi', 'recentScores', 'upcomingEvents', 'recommendations', 'chart', 'insights', 'risk'));
+        $sportApply = [
+            'org_sports_count' => (int) Sport::query()->where('organization_id', $user->organization_id)->count(),
+            'pending_applications' => (int) SportApplication::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->count(),
+        ];
+
+        return view('dashboards.student', compact('kpi', 'recentScores', 'upcomingEvents', 'recommendations', 'chart', 'insights', 'risk', 'sportApply'));
     }
 }

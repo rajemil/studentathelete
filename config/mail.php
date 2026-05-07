@@ -39,8 +39,7 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            // Gmail typically uses TLS on port 587. Laravel supports "scheme" in newer configs,
-            // but many guides still use MAIL_ENCRYPTION. Support both.
+            // Brevo/Gmail etc.: TLS on 587 — set MAIL_SCHEME=tls or MAIL_ENCRYPTION=tls in .env.
             'scheme' => env('MAIL_SCHEME', env('MAIL_ENCRYPTION')),
             'url' => env('MAIL_URL'),
             'host' => env('MAIL_HOST', '127.0.0.1'),

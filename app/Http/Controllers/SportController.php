@@ -102,7 +102,13 @@ class SportController extends Controller
             ->limit(250)
             ->get(['id', 'name', 'email']);
 
-        return view('sports.show', compact('sport', 'students', 'availableStudents'));
+        $pendingApplications = $sport->applications()
+            ->where('status', 'pending')
+            ->with(['user.profile'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('sports.show', compact('sport', 'students', 'availableStudents', 'pendingApplications'));
     }
 
     public function edit(Sport $sport): View
@@ -118,12 +124,23 @@ class SportController extends Controller
             'name' => ['required', 'string', 'max:120', Rule::unique('sports', 'name')->where('organization_id', $user->organization_id)->ignore($sport->id)],
             'slug' => ['nullable', 'string', 'max:140', Rule::unique('sports', 'slug')->where('organization_id', $user->organization_id)->ignore($sport->id)],
             'description' => ['nullable', 'string', 'max:5000'],
+            'qual_min_age' => ['nullable', 'integer', 'min:5', 'max:120'],
+            'qual_max_age' => ['nullable', 'integer', 'min:5', 'max:120'],
+            'qual_min_height_cm' => ['nullable', 'integer', 'min:100', 'max:260'],
+            'qual_genders' => ['nullable', 'array'],
+            'qual_genders.*' => ['string', 'in:male,female,other,prefer_not_to_say'],
         ]);
 
         $sport->update([
             'name' => $validated['name'],
             'slug' => $validated['slug'] ?? Str::slug($validated['name']),
             'description' => $validated['description'] ?? null,
+            'qual_min_age' => $validated['qual_min_age'] ?? null,
+            'qual_max_age' => $validated['qual_max_age'] ?? null,
+            'qual_min_height_cm' => $validated['qual_min_height_cm'] ?? null,
+            'qual_allowed_genders' => isset($validated['qual_genders']) && count($validated['qual_genders']) > 0
+                ? array_values(array_unique($validated['qual_genders']))
+                : null,
         ]);
 
         activity()

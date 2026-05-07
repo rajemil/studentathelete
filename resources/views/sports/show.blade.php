@@ -93,6 +93,52 @@
                 </div>
             @endif
 
+            @can('assignStudents', $sport)
+                @if($pendingApplications->isNotEmpty())
+                    <div class="dash-card rounded-3xl overflow-hidden">
+                        <div class="border-b border-gray-200/60 dark:border-white/10 px-6 py-4">
+                            <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Pending student applications</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Review requests from the student dashboard. Eligibility is computed from profile + rules below.</div>
+                        </div>
+                        <div class="divide-y divide-gray-200/60 dark:divide-white/10">
+                            @foreach($pendingApplications as $application)
+                                <div class="px-6 py-4 space-y-3">
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $application->user->name }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $application->user->email }}</div>
+                                            @if($application->student_message)
+                                                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">&ldquo;{{ $application->student_message }}&rdquo;</p>
+                                            @endif
+                                        </div>
+                                        <span class="text-xs font-semibold rounded-full px-2 py-0.5 border {{ $application->qualification_passed ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200' }}">
+                                            {{ $application->qualification_passed ? 'Meets rules' : 'Check profile' }}
+                                        </span>
+                                    </div>
+                                    @if(is_array($application->qualification_detail) && count($application->qualification_detail))
+                                        <ul class="text-xs text-gray-600 dark:text-gray-400 list-disc pl-4 space-y-1">
+                                            @foreach($application->qualification_detail as $line)
+                                                <li>{{ $line }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                    <div class="flex flex-wrap gap-2">
+                                        <form method="POST" action="{{ route('sports.applications.approve', [$sport, $application]) }}" onsubmit="return confirm('Approve and assign this student to the sport?');">
+                                            @csrf
+                                            <button type="submit" class="rounded-xl bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] px-3 py-2 text-xs font-semibold text-white shadow-sm">Approve</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('sports.applications.reject', [$sport, $application]) }}" onsubmit="return confirm('Reject this application?');">
+                                            @csrf
+                                            <button type="submit" class="rounded-xl border border-gray-200 dark:border-white/15 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200">Reject</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            @endcan
+
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {{-- Assign student form --}}
                 <div class="dash-card rounded-3xl p-6 lg:col-span-2">

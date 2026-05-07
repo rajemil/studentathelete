@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sport;
+use App\Models\SportApplication;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,8 @@ class SportStudentController extends Controller
 
         $sport->students()->syncWithoutDetaching([$student->id]);
 
+        SportApplication::query()->where('sport_id', $sport->id)->where('user_id', $student->id)->delete();
+
         activity()
             ->performedOn($sport)
             ->causedBy($request->user())
@@ -42,6 +45,8 @@ class SportStudentController extends Controller
         abort_unless((int) $user->organization_id === (int) $request->user()->organization_id, 403);
 
         $sport->students()->detach($user->id);
+
+        SportApplication::query()->where('sport_id', $sport->id)->where('user_id', $user->id)->delete();
 
         activity()
             ->performedOn($sport)

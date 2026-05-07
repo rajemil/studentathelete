@@ -35,4 +35,28 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | LLM (Gemini / OpenAI / Grok)
+    |--------------------------------------------------------------------------
+    | AI_PROVIDER: none | gemini | openai | grok
+    | Set the matching API key; leave AI_PROVIDER=none until keys are configured.
+    */
+    'ai' => [
+        'provider' => env('AI_PROVIDER', 'none'),
+        'timeout' => (int) env('AI_TIMEOUT', 25),
+        'gemini' => [
+            'key' => env('GEMINI_API_KEY'),
+            'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
+        ],
+        'openai' => [
+            'key' => env('OPENAI_API_KEY'),
+            'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        ],
+        'grok' => [
+            'key' => env('GROK_API_KEY'),
+            'model' => env('GROK_MODEL', 'grok-2-latest'),
+        ],
+    ],
+
 ];

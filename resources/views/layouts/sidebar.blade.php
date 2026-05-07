@@ -11,12 +11,29 @@
 <aside class="hidden lg:flex lg:flex-col lg:w-72 lg:shrink-0 h-[calc(100vh-3rem)] sticky top-6">
     <div class="h-full flex flex-col rounded-2xl bg-white border border-gray-200/60 shadow-sm transition dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10">
         <div class="px-5 py-5 flex items-center gap-3">
-            <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white flex items-center justify-center shadow-sm relative group overflow-hidden">
+            <div
+                class="h-10 w-10 shrink-0 rounded-2xl bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white flex items-center justify-center shadow-sm ring-1 ring-black/5 dark:ring-white/10 relative group overflow-hidden"
+                role="img"
+                aria-label="{{ config('app.name', 'Student Athlete AI') }} logo"
+            >
                 <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                <span class="text-sm font-bold tracking-tight relative z-10">SA</span>
+                {{-- Mark: trajectory + rising metrics (sport performance + analytics) --}}
+                <svg class="h-[22px] w-[22px] relative z-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path
+                        d="M2.5 23.5C9 11 17.5 8 29.5 13"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                        stroke-linecap="round"
+                        opacity="0.38"
+                    />
+                    <rect x="6.5" y="19" width="5.2" height="8" rx="1.35" fill="currentColor" opacity="0.92" />
+                    <rect x="13.4" y="14" width="5.2" height="13" rx="1.35" fill="currentColor" opacity="0.96" />
+                    <rect x="20.3" y="9" width="5.2" height="18" rx="1.35" fill="currentColor" />
+                    <circle cx="26" cy="7.25" r="2.35" fill="currentColor" opacity="0.95" />
+                </svg>
             </div>
             <div class="leading-tight">
-                <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">SAIMS</div>
+                <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">STUDENT ATHLETE AI MS</div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">Sports Analytics</div>
             </div>
         </div>
@@ -56,6 +73,21 @@
                             </svg>
                         </span>
                         Faculty management
+                    </a>
+
+                    <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Student management</div>
+                    <a href="{{ route('admin.students.index') }}"
+                        class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
+                            {{ request()->routeIs('admin.students.*') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
+                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ request()->routeIs('admin.students.*') ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </span>
+                        Students
                     </a>
 
                     <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Team & sport</div>

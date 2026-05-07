@@ -66,9 +66,17 @@ trait BuildsCoachStyleDashboard
             ->distinct('user_id')
             ->pluck('user_id');
 
+        $orgId = (int) $user->organization_id;
+
         $insights = Insight::query()
-            ->whereIn('user_id', $athleteIds)
-            ->orWhereNull('user_id')
+            ->where(function ($q) use ($athleteIds, $orgId) {
+                $q->whereIn('user_id', $athleteIds)
+                    ->orWhere(function ($q2) use ($orgId) {
+                        $q2->where('type', 'narrative_summary')
+                            ->where('organization_id', $orgId)
+                            ->whereNull('user_id');
+                    });
+            })
             ->orderByDesc('computed_at')
             ->limit(6)
             ->get();

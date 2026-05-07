@@ -46,10 +46,50 @@ class InsightsService
         Insight::query()->upsert(
             $insights->all(),
             ['hash_key'],
-            ['user_id', 'sport_id', 'team_id', 'type', 'severity', 'title', 'message', 'payload', 'computed_at', 'updated_at']
+            ['organization_id', 'user_id', 'sport_id', 'team_id', 'type', 'severity', 'title', 'message', 'payload', 'computed_at', 'updated_at']
         );
 
         return $insights->count();
+    }
+
+    /**
+     * Persist a weekly LLM narrative card (one row per org or per athlete per ISO week).
+     */
+    public function persistNarrativeSummary(
+        int $organizationId,
+        ?int $userId,
+        string $narrative,
+        string $actionable,
+        array $aiMeta,
+        CarbonImmutable $now,
+    ): void {
+        $weekKey = $now->format('o-\\WW');
+        $hashKey = sha1(json_encode(['narrative_summary', $organizationId, $userId, $weekKey]));
+        $payload = [
+            'narrative' => $narrative,
+            'actionable' => $actionable,
+            'ai' => $aiMeta,
+        ];
+
+        Insight::query()->upsert(
+            [[
+                'hash_key' => $hashKey,
+                'organization_id' => $organizationId,
+                'user_id' => $userId,
+                'sport_id' => null,
+                'team_id' => null,
+                'type' => 'narrative_summary',
+                'severity' => 'info',
+                'title' => 'AI summary',
+                'message' => $actionable,
+                'payload' => $this->normalizeJsonPayload($payload),
+                'computed_at' => $now,
+                'created_at' => CarbonImmutable::now(),
+                'updated_at' => CarbonImmutable::now(),
+            ]],
+            ['hash_key'],
+            ['organization_id', 'user_id', 'sport_id', 'team_id', 'type', 'severity', 'title', 'message', 'payload', 'computed_at', 'updated_at']
+        );
     }
 
     /**
@@ -393,8 +433,14 @@ class InsightsService
             'message' => $data['message'],
         ]));
 
+        $organizationId = $data['organization_id'] ?? null;
+        if ($organizationId === null && ! empty($data['user_id'])) {
+            $organizationId = User::query()->whereKey($data['user_id'])->value('organization_id');
+        }
+
         return [
             'hash_key' => $hashKey,
+            'organization_id' => $organizationId,
             'user_id' => $data['user_id'] ?? null,
             'sport_id' => $data['sport_id'] ?? null,
             'team_id' => $data['team_id'] ?? null,
