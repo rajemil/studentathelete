@@ -77,7 +77,14 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::get('/admin/reports', AdminReportsController::class)->name('admin.reports.index');
         Route::get('/admin/reports/performance-scores.csv', [AdminReportsController::class, 'export'])
             ->name('admin.reports.performance_scores_csv');
-        Route::get('/admin/system', AdminSystemConfigController::class)->name('admin.system.index');
+        // System & Academic Config
+        Route::get('/admin/system', [AdminSystemConfigController::class, 'index'])->name('admin.system.index');
+        Route::post('/admin/system/courses', [AdminSystemConfigController::class, 'storeCourse'])->name('admin.system.courses.store');
+        Route::delete('/admin/system/courses/{course}', [AdminSystemConfigController::class, 'destroyCourse'])->name('admin.system.courses.destroy');
+        Route::post('/admin/system/years', [AdminSystemConfigController::class, 'storeYearLevel'])->name('admin.system.years.store');
+        Route::delete('/admin/system/years/{yearLevel}', [AdminSystemConfigController::class, 'destroyYearLevel'])->name('admin.system.years.destroy');
+        Route::post('/admin/system/sections', [AdminSystemConfigController::class, 'storeSection'])->name('admin.system.sections.store');
+        Route::delete('/admin/system/sections/{section}', [AdminSystemConfigController::class, 'destroySection'])->name('admin.system.sections.destroy');
     });
 
     Route::middleware('role:coach,instructor')->group(function () {

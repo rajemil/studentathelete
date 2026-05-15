@@ -24,6 +24,9 @@ class Profile extends Model
         'achievements',
         'profession',
         'coaching_experience_years',
+        'course_id',
+        'year_level_id',
+        'section_id',
     ];
 
     protected function casts(): array
@@ -41,5 +44,20 @@ class Profile extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function course(): BelongsTo
+    {
+        return $this->belongsTo(Course::class);
+    }
+
+    public function yearLevel(): BelongsTo
+    {
+        return $this->belongsTo(YearLevel::class);
+    }
+
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(Section::class);
     }
 }

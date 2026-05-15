@@ -20,7 +20,7 @@
                 @endunless
 
                 @isset($header)
-                    <div class="min-w-0">
+                    <div class="flex-1 min-w-0 py-1">
                         {{ $header }}
                     </div>
                 @endisset

@@ -36,11 +36,11 @@ class DatabaseSeeder extends Seeder
         // Always seed the minimal "core" setup so the app can be used manually.
         $defaultOrg = Organization::query()->firstOrCreate(
             ['slug' => 'default'],
-            ['name' => 'Default Organization']
+            ['name' => 'Student Athlete Ai']
         );
 
         $admin = User::query()->firstOrCreate(
-            ['email' => 'admin@gmail.com'],
+            ['email' => 'ai.studentathlete001@gmail.com'],
             [
                 'organization_id' => $defaultOrg->id,
                 'role' => 'admin',

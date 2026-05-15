@@ -26,7 +26,7 @@ class AdminUserController extends Controller
 
         $users = User::query()
             ->where('organization_id', $orgId)
-            ->whereIn('role', ['admin', 'coach', 'instructor'])
+            ->whereIn('role', ['coach', 'instructor'])
             ->with([
                 'sports',
                 'profile',
@@ -74,7 +74,7 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', 'string', 'in:admin,coach,instructor'],
+            'role' => ['sometimes', 'string', 'in:coach,instructor'],
             'password' => ['nullable', 'string', 'min:8'],
             'birthdate' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
@@ -94,7 +94,7 @@ class AdminUserController extends Controller
             'organization_id' => $orgId,
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'role' => $validated['role'],
+            'role' => $validated['role'] ?? 'coach',
             'password' => Hash::make($password),
             'email_verified_at' => CarbonImmutable::now(),
         ]);
@@ -217,7 +217,7 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'string', 'in:admin,coach,instructor'],
+            'role' => ['sometimes', 'string', 'in:admin,coach,instructor'],
             'sport_ids' => ['sometimes', 'array'],
             'sport_ids.*' => ['integer'],
             'birthdate' => ['nullable', 'date'],
@@ -241,11 +241,16 @@ class AdminUserController extends Controller
             }
         }
 
-        $user->update([
+        $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'role' => $validated['role'],
-        ]);
+        ];
+
+        if (isset($validated['role'])) {
+            $updateData['role'] = $validated['role'];
+        }
+
+        $user->update($updateData);
 
         $birthdate = isset($validated['birthdate']) ? CarbonImmutable::parse($validated['birthdate']) : null;
         // profiles.age is an unsignedSmallInteger → must be an integer
