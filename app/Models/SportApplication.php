@@ -14,6 +14,11 @@ class SportApplication extends Model
         'qualification_passed',
         'qualification_detail',
         'student_message',
+        'report_card_path',
+        'other_document_path',
+        'medical_bp',
+        'medical_heart_rate',
+        'medical_allergies',
     ];
 
     protected function casts(): array

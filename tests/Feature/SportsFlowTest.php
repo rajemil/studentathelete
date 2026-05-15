@@ -14,20 +14,23 @@ class SportsFlowTest extends TestCase
 
     public function test_coach_can_manage_sport_assign_students_and_enter_scores(): void
     {
-        $coach = User::factory()->create(['role' => 'coach']);
-        $student = User::factory()->create(['role' => 'student']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $admin->organization_id]);
+        $student = User::factory()->create(['role' => 'student', 'organization_id' => $admin->organization_id]);
 
-        // Create sport
-        $create = $this->actingAs($coach)->post('/sports', [
+        // Admin creates sport
+        $this->actingAs($admin)->post('/sports', [
             'name' => 'Volleyball',
             'slug' => '',
             'description' => 'Team sport',
-        ]);
-        $create->assertStatus(302);
+        ])->assertStatus(302);
 
         $sport = Sport::query()->where('name', 'Volleyball')->firstOrFail();
+        
+        // Assign coach to sport
+        $coach->sports()->attach($sport->id);
 
-        // Assign student
+        // Coach manages sport (Assign student)
         $assign = $this->actingAs($coach)->post(route('sports.students.store', $sport), [
             'user_id' => $student->id,
         ]);

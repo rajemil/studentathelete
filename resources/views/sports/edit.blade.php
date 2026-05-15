@@ -68,6 +68,33 @@
                         </div>
                     </div>
 
+                    <!-- Additional requirement toggles -->
+                    <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 p-5 space-y-4">
+                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Additional Application Requirements</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="require_report_card" value="1" class="rounded border-gray-300 dark:border-gray-600" @checked(old('require_report_card', $sport->require_report_card))>
+                                Require Report Card
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="require_medical_form" value="1" class="rounded border-gray-300 dark:border-gray-600" @checked(old('require_medical_form', $sport->require_medical_form))>
+                                Require Medical Form
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="require_bp" value="1" class="rounded border-gray-300 dark:border-gray-600" @checked(old('require_bp', $sport->require_bp))>
+                                Require Blood Pressure
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="require_heart_rate" value="1" class="rounded border-gray-300 dark:border-gray-600" @checked(old('require_heart_rate', $sport->require_heart_rate))>
+                                Require Heart Rate
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="require_allergies" value="1" class="rounded border-gray-300 dark:border-gray-600" @checked(old('require_allergies', $sport->require_allergies))>
+                                Require Allergies / Notes
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="flex items-center justify-end gap-4 pt-2">
                         @unless(request()->boolean('modal'))
                             <a href="{{ route('sports.show', $sport) }}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition">Back</a>

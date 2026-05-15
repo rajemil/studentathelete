@@ -48,7 +48,7 @@ class AdminStudentManagementTest extends TestCase
             'organization_id' => $org->id,
         ]);
 
-        Mail::assertSent(StudentWelcomeMail::class, function (StudentWelcomeMail $mail): bool {
+        Mail::assertQueued(StudentWelcomeMail::class, function (StudentWelcomeMail $mail): bool {
             return strlen($mail->plainAccessCode) === 6
                 && preg_match('/^[A-Z0-9]{6}$/', $mail->plainAccessCode) === 1;
         });

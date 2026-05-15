@@ -3,6 +3,37 @@
 @tailwind utilities;
 
 @layer base {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    .dark * {
+        scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    /* Webkit scrollbar (Chrome/Safari) */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
     html {
         scroll-behavior: smooth;
     }
@@ -216,5 +247,9 @@
         .login-glow-pulse {
             animation: none !important;
         }
+    }
+
+    [x-cloak] {
+        display: none !important;
     }
 }

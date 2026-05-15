@@ -33,8 +33,8 @@ class SportStudentController extends Controller
             ->withProperties(['student_id' => $student->id, 'action' => 'assigned'])
             ->log('sport_student_assigned');
 
-        return redirect()->route('sports.show', $sport)
-            ->with('status', 'Student assigned to sport.');
+        return $this->redirectRoutePreservingModal($request, 'sports.show', $sport)
+            ->with('status', 'Student assigned.');
     }
 
     public function destroy(Request $request, Sport $sport, User $user): RedirectResponse

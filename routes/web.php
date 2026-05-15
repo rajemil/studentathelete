@@ -115,6 +115,8 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::delete('sports/{sport}/students/{user}', [SportStudentController::class, 'destroy'])
             ->name('sports.students.destroy');
 
+        Route::get('sports/{sport}/applications/{application}/review', [SportApplicationController::class, 'review'])
+            ->name('sports.applications.review');
         Route::post('sports/{sport}/applications/{application}/approve', [SportApplicationController::class, 'approve'])
             ->name('sports.applications.approve');
         Route::post('sports/{sport}/applications/{application}/reject', [SportApplicationController::class, 'reject'])

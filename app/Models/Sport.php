@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sport extends Model
 {
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     protected $fillable = [
         'organization_id',
         'instructor_user_id',
@@ -19,6 +24,11 @@ class Sport extends Model
         'qual_max_age',
         'qual_min_height_cm',
         'qual_allowed_genders',
+        'require_report_card',
+        'require_medical_form',
+        'require_bp',
+        'require_heart_rate',
+        'require_allergies',
     ];
 
     protected function casts(): array

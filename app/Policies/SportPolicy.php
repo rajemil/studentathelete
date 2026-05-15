@@ -30,12 +30,20 @@ class SportPolicy
     public function create(User $user): bool
     {
         return $user->organization_id !== null
-            && in_array($user->role, ['admin', 'coach', 'instructor'], true);
+            && $user->role === 'admin';
     }
 
     public function update(User $user, Sport $sport): bool
     {
-        return $user->role === 'admin' && $this->sameOrganization($user, $sport);
+        if (! $this->sameOrganization($user, $sport)) {
+            return false;
+        }
+
+        return match ($user->role) {
+            'admin' => true,
+            'coach', 'instructor' => collect($user->sports()->pluck('sports.id'))->contains($sport->id),
+            default => false,
+        };
     }
 
     public function delete(User $user, Sport $sport): bool

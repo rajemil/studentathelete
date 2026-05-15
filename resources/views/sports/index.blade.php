@@ -15,11 +15,13 @@
                 </div>
             @endif
 
+            @can('create', App\Models\Sport::class)
             <div class="flex items-center justify-end">
                 <button type="button" @click="newOpen = true" class="inline-flex items-center rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#FFB24D] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95">
                     New sport
                 </button>
             </div>
+            @endcan
 
             <!-- New sport modal -->
             <div x-show="newOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -80,7 +82,14 @@
                             @forelse($sports as $sport)
                                 <tr>
                                     <td class="px-5 py-4">
-                                        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $sport->name }}</div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $sport->name }}</div>
+                                            @if($sport->pending_applications_count > 0)
+                                                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 animate-pulse">
+                                                    {{ $sport->pending_applications_count }} pending
+                                                </span>
+                                            @endif
+                                        </div>
                                         @if($sport->description)
                                             <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{{ $sport->description }}</div>
                                         @endif
@@ -97,6 +106,7 @@
                                         <div class="inline-flex items-center gap-3">
                                             <a href="{{ route('sports.show', $sport) }}" class="text-sm font-semibold text-[#FF7A1A] hover:underline">Manage</a>
 
+                                            @can('delete', $sport)
                                             <button
                                                 type="button"
                                                 class="rounded-xl p-2 text-gray-500 hover:text-red-500 hover:bg-black/5 dark:hover:bg-white/5"
@@ -111,6 +121,7 @@
                                                     <path d="M14 11v6"></path>
                                                 </svg>
                                             </button>
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>
