@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
                 <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Faculty management</h2>
-                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage faculty accounts and roles (admin, coach, instructor).</div>
+                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage coach accounts and sports assignments.</div>
             </div>
         </div>
     </x-slot>
@@ -101,13 +101,12 @@
                                     <x-input-error :messages="$errors->get('email')" class="mt-2" />
                                 </div>
                                 <div>
-                                    <x-input-label for="role" value="Role" />
-                                    <select id="role" name="role" x-model="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
-                                        @foreach(['coach','instructor','admin'] as $r)
-                                            <option value="{{ $r }}" @selected(old('role', 'coach') === $r)>{{ ucfirst($r) }}</option>
-                                        @endforeach
-                                    </select>
-                                    <x-input-error :messages="$errors->get('role')" class="mt-2" />
+                                    <x-input-label value="Role" />
+                                    <div class="mt-1 flex items-center gap-2 rounded-md border border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-900/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
+                                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                        Coach
+                                    </div>
+                                    <input type="hidden" name="role" value="coach" x-model="role">
                                 </div>
                                 <div>
                                     <x-input-label for="password" value="Temporary password (optional)" />
@@ -146,7 +145,7 @@
 
                     <div>
                         <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Sports assignment</div>
-                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400" x-text="role === 'instructor' ? 'Select sports to teach (1 instructor per sport).' : 'Select sports to coach (instructor info is optional).'"></div>
+                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Select sports to coach (instructor info is optional).</div>
 
                         <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                             @foreach($sports as $sport)
@@ -375,11 +374,10 @@
                                                         </div>
                                                         <div>
                                                             <x-input-label value="Role" />
-                                                            <select name="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
-                                                                @foreach(['admin','coach','instructor'] as $r)
-                                                                    <option value="{{ $r }}" @selected(old('role', $u->role) === $r)>{{ ucfirst($r) }}</option>
-                                                                @endforeach
-                                                            </select>
+                                                            <div class="mt-1 flex items-center gap-2 rounded-md border border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-900/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 capitalize">
+                                                                <span class="h-2 w-2 rounded-full" :class="$u->role === 'admin' ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+                                                                {{ $u->role }}
+                                                            </div>
                                                         </div>
                                                         <div class="sm:col-span-2">
                                                             <x-input-label value="Address (optional)" />

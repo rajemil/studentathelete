@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">System Configuration</h2>
-            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage academic metadata and core system classification settings.</div>
+            <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Academic Settings</h2>
+            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage courses, year levels, and sections for student classification.</div>
         </div>
     </x-slot>
 
@@ -23,7 +23,7 @@
         <div x-show="tab === 'courses'" class="space-y-4">
             <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-6 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4">Add New Course</h3>
-                <form method="POST" action="{{ route('admin.system.courses.store') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <form method="POST" action="{{ route('admin.settings.courses.store') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     @csrf
                     <div class="sm:col-span-2">
                         <x-input-label value="Course Name (e.g. BS Information Technology)" />
@@ -54,7 +54,7 @@
                                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $c->name }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $c->code ?: '—' }}</td>
                                 <td class="px-4 py-3 text-right text-sm">
-                                    <form method="POST" action="{{ route('admin.system.courses.destroy', $c) }}" onsubmit="return confirm('Remove this course?')">
+                                    <form method="POST" action="{{ route('admin.settings.courses.destroy', $c) }}" onsubmit="return confirm('Remove this course?')">
                                         @csrf @method('DELETE')
                                         <button class="text-red-600 hover:underline">Remove</button>
                                     </form>
@@ -72,7 +72,7 @@
         <div x-show="tab === 'years'" class="space-y-4" x-cloak>
             <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-6 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4">Add Year Level</h3>
-                <form method="POST" action="{{ route('admin.system.years.store') }}" class="flex flex-col sm:flex-row gap-4 items-end">
+                <form method="POST" action="{{ route('admin.settings.years.store') }}" class="flex flex-col sm:flex-row gap-4 items-end">
                     <div class="flex-1">
                         <x-input-label value="Year Level Name (e.g. 1st Year)" />
                         <x-text-input name="name" type="text" class="mt-1 block w-full" required />
@@ -95,7 +95,7 @@
                             <tr>
                                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $y->name }}</td>
                                 <td class="px-4 py-3 text-right text-sm">
-                                    <form method="POST" action="{{ route('admin.system.years.destroy', $y) }}" onsubmit="return confirm('Remove this year level?')">
+                                    <form method="POST" action="{{ route('admin.settings.years.destroy', $y) }}" onsubmit="return confirm('Remove this year level?')">
                                         @csrf @method('DELETE')
                                         <button class="text-red-600 hover:underline">Remove</button>
                                     </form>
@@ -113,7 +113,7 @@
         <div x-show="tab === 'sections'" class="space-y-4" x-cloak>
             <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-6 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4">Add Section</h3>
-                <form method="POST" action="{{ route('admin.system.sections.store') }}" class="flex flex-col sm:flex-row gap-4 items-end">
+                <form method="POST" action="{{ route('admin.settings.sections.store') }}" class="flex flex-col sm:flex-row gap-4 items-end">
                     <div class="flex-1">
                         <x-input-label value="Section Name (e.g. Section A)" />
                         <x-text-input name="name" type="text" class="mt-1 block w-full" required />
@@ -136,7 +136,7 @@
                             <tr>
                                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $s->name }}</td>
                                 <td class="px-4 py-3 text-right text-sm">
-                                    <form method="POST" action="{{ route('admin.system.sections.destroy', $s) }}" onsubmit="return confirm('Remove this section?')">
+                                    <form method="POST" action="{{ route('admin.settings.sections.destroy', $s) }}" onsubmit="return confirm('Remove this section?')">
                                         @csrf @method('DELETE')
                                         <button class="text-red-600 hover:underline">Remove</button>
                                     </form>

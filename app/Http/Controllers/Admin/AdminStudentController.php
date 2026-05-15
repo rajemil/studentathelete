@@ -7,6 +7,9 @@ use App\Mail\StudentWelcomeMail;
 use App\Models\Profile;
 use App\Models\Sport;
 use App\Models\User;
+use App\Models\Course;
+use App\Models\YearLevel;
+use App\Models\Section;
 use App\Support\AccessCode;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -32,12 +35,11 @@ class AdminStudentController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        $sports = Sport::query()
-            ->where('organization_id', $orgId)
-            ->orderBy('name')
-            ->get();
+        $courses = Course::where('organization_id', $orgId)->orderBy('name')->get();
+        $yearLevels = YearLevel::where('organization_id', $orgId)->orderBy('name')->get();
+        $sections = Section::where('organization_id', $orgId)->orderBy('name')->get();
 
-        return view('admin.students.index', compact('students', 'sports'));
+        return view('admin.students.index', compact('students', 'courses', 'yearLevels', 'sections'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -55,8 +57,9 @@ class AdminStudentController extends Controller
             'height_cm' => ['nullable', 'numeric', 'min:50', 'max:300'],
             'weight_kg' => ['nullable', 'numeric', 'min:10', 'max:350'],
             'photo' => ['nullable', 'file', 'image', 'max:5120'],
-            'sport_ids' => ['sometimes', 'array'],
-            'sport_ids.*' => ['integer'],
+            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
+            'year_level_id' => ['nullable', 'integer', 'exists:year_levels,id'],
+            'section_id' => ['nullable', 'integer', 'exists:sections,id'],
         ]);
 
         $plainCode = AccessCode::generate(6);
@@ -86,6 +89,9 @@ class AdminStudentController extends Controller
             'height_cm' => $height,
             'weight_kg' => $weight,
             'bmi' => $bmi,
+            'course_id' => $validated['course_id'] ?? null,
+            'year_level_id' => $validated['year_level_id'] ?? null,
+            'section_id' => $validated['section_id'] ?? null,
         ]);
 
         if ($request->hasFile('photo')) {
@@ -141,8 +147,9 @@ class AdminStudentController extends Controller
             'height_cm' => ['nullable', 'numeric', 'min:50', 'max:300'],
             'weight_kg' => ['nullable', 'numeric', 'min:10', 'max:350'],
             'photo' => ['nullable', 'file', 'image', 'max:5120'],
-            'sport_ids' => ['sometimes', 'array'],
-            'sport_ids.*' => ['integer'],
+            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
+            'year_level_id' => ['nullable', 'integer', 'exists:year_levels,id'],
+            'section_id' => ['nullable', 'integer', 'exists:sections,id'],
         ]);
 
         $user->update([
@@ -170,6 +177,9 @@ class AdminStudentController extends Controller
             'height_cm' => $height,
             'weight_kg' => $weight,
             'bmi' => $bmi,
+            'course_id' => $validated['course_id'] ?? null,
+            'year_level_id' => $validated['year_level_id'] ?? null,
+            'section_id' => $validated['section_id'] ?? null,
         ])->save();
 
         if ($request->hasFile('photo')) {
@@ -180,20 +190,8 @@ class AdminStudentController extends Controller
             $profile->update(['photo_path' => $path]);
         }
 
-        $orgId = $request->user()->organization_id;
-        $allowedSportIds = Sport::query()
-            ->where('organization_id', $orgId)
-            ->pluck('id')
-            ->map(fn ($v) => (int) $v)
-            ->all();
-
-        $desiredSportIds = collect($validated['sport_ids'] ?? [])
-            ->map(fn ($v) => (int) $v)
-            ->filter(fn (int $id) => in_array($id, $allowedSportIds, true))
-            ->unique()
-            ->values();
-
-        $user->sports()->sync($desiredSportIds->all());
+        // Sports are now chosen by students themselves.
+        // $user->sports()->sync($desiredSportIds->all());
 
         activity()
             ->performedOn($user)

@@ -10,7 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-class AdminSystemConfigController extends Controller
+class AdminSettingsController extends Controller
 {
     public function index(): View
     {
@@ -20,7 +20,7 @@ class AdminSystemConfigController extends Controller
         $yearLevels = YearLevel::where('organization_id', $orgId)->orderBy('name')->get();
         $sections = Section::where('organization_id', $orgId)->orderBy('name')->get();
 
-        return view('admin.system', compact('courses', 'yearLevels', 'sections'));
+        return view('admin.settings.index', compact('courses', 'yearLevels', 'sections'));
     }
 
     // COURSES
