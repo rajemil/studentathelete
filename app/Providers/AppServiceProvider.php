@@ -23,5 +23,23 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        view()->composer(['layouts.sidebar', 'layouts.topbar', 'layouts.nav-mobile-links'], function ($view) {
+            if (auth()->check() && in_array(auth()->user()->role, ['admin', 'coach', 'instructor'])) {
+                $user = auth()->user();
+                $count = \App\Models\SportApplication::where('status', 'pending')
+                    ->whereHas('sport', function ($q) use ($user) {
+                        $q->where('organization_id', $user->organization_id);
+                        if ($user->role !== 'admin') {
+                            // Filter sports managed by coach
+                            $assignedSportIds = $user->sports()->pluck('sports.id');
+                            $teamSportIds = \App\Models\Team::whereIn('id', \App\Support\CoachedTeams::teamIds($user))->pluck('sport_id');
+                            $q->whereIn('id', $assignedSportIds->merge($teamSportIds)->unique());
+                        }
+                    })
+                    ->count();
+                $view->with('pendingApplicationsCount', $count);
+            }
+        });
     }
 }

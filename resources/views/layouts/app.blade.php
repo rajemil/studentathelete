@@ -16,6 +16,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <script>
+            window.userRole = '{{ auth()->user() ? auth()->user()->role : "" }}';
             (function () {
                 try {
                     var saved = localStorage.getItem('theme');
@@ -39,19 +40,23 @@
         x-data="{
             theme: (localStorage.getItem('theme') || 'dark'),
             mobileNavOpen: false,
+            actionOpen: false,
+            actionTitle: '',
+            actionSrc: '',
             toggleTheme() {
                 this.theme = this.theme === 'dark' ? 'light' : 'dark';
                 localStorage.setItem('theme', this.theme);
                 document.documentElement.classList.toggle('dark', this.theme === 'dark');
             }
         }"
+        x-on:close-modal.window="actionOpen = false"
+        x-on:toggle-sidebar.window="mobileNavOpen = !mobileNavOpen"
         x-init="
             if (!localStorage.getItem('theme')) {
                 localStorage.setItem('theme', 'dark');
                 document.documentElement.classList.add('dark');
             }
         "
-        x-on:toggle-sidebar.window="mobileNavOpen = !mobileNavOpen"
     >
         <!-- Dark Mode Background System (similar to landing page) -->
         <div class="fixed inset-0 z-0 pointer-events-none transition-opacity duration-500 opacity-0 dark:opacity-100">
@@ -70,8 +75,6 @@
         <div class="min-h-screen relative z-10">
             @if($isModal)
                 <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
-                    @include('layouts.topbar')
-
                     <main>
                         {{ $slot }}
                     </main>
@@ -121,5 +124,57 @@
                 </div>
             @endif
         </div>
+
+        <!-- Global Action Modal (Premium Glassmorphism) -->
+        <div
+            x-show="actionOpen"
+            class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+            x-cloak
+        >
+            <div
+                x-show="actionOpen"
+                x-transition.opacity
+                class="absolute inset-0 bg-black/60 backdrop-blur-md"
+                x-on:click="actionOpen = false"
+            ></div>
+
+            <div
+                x-show="actionOpen"
+                x-transition.scale.95
+                class="relative w-full max-w-5xl h-[85vh] bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden flex flex-col"
+            >
+                <div class="px-8 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/2 backdrop-blur-xl">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white" x-text="actionTitle"></h3>
+                    <button
+                        type="button"
+                        class="h-10 w-10 flex items-center justify-center rounded-2xl bg-white dark:bg-white/5 border border-gray-200/60 dark:border-white/10 text-gray-500 hover:text-gray-900 dark:hover:text-white transition shadow-sm"
+                        x-on:click="actionOpen = false"
+                    >
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-hidden bg-gray-50 dark:bg-black/20 relative">
+                    <template x-if="actionOpen">
+                        <iframe 
+                            :src="actionSrc" 
+                            class="w-full h-full border-0" 
+                            style="color-scheme: dark;"
+                            loading="lazy"
+                        ></iframe>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        @if(session('status') && request()->boolean('modal'))
+            <script>
+                if (window.parent && window.parent !== window) {
+                    // Refresh parent to show updated data
+                    window.parent.location.reload();
+                }
+            </script>
+        @endif
     </body>
 </html>

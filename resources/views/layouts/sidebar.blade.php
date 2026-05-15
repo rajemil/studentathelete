@@ -104,13 +104,22 @@
                                 <path d="M15 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
                             </svg>
                         </span>
-                        @if($isAdmin)
-                            Sports & teams
-                        @elseif($isInstructor)
-                            Assigned classes & sports
-                        @else
-                            Coached teams & sports
-                        @endif
+                        <div class="flex items-center justify-between gap-2 flex-1 min-w-0">
+                            <span class="truncate">
+                                @if($isAdmin)
+                                    Sports & teams
+                                @elseif($isInstructor)
+                                    Assigned classes & sports
+                                @else
+                                    Coached teams & sports
+                                @endif
+                            </span>
+                            @if(($pendingApplicationsCount ?? 0) > 0)
+                                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                                    {{ $pendingApplicationsCount }}
+                                </span>
+                            @endif
+                        </div>
                     </a>
                 @endif
 

@@ -25,20 +25,31 @@ class SportController extends Controller
 
         $query = Sport::query()
             ->where('organization_id', $user->organization_id)
-            ->withCount('students')
+            ->withCount([
+                'students',
+                'applications as pending_applications_count' => function ($q) {
+                    $q->where('status', 'pending');
+                }
+            ])
             ->orderBy('name');
 
         if (in_array($user->role, ['coach', 'instructor'], true)) {
-            $sportIds = Team::query()
+            // Get sports the faculty is explicitly assigned to via sport_user
+            $assignedSportIds = $user->sports()->pluck('sports.id')->unique()->filter();
+
+            // Also include sports from teams they coach
+            $teamSportIds = Team::query()
                 ->whereIn('id', CoachedTeams::teamIds($user))
                 ->pluck('sport_id')
                 ->unique()
                 ->filter();
 
-            if ($sportIds->isEmpty()) {
+            $allSportIds = $assignedSportIds->merge($teamSportIds)->unique();
+
+            if ($allSportIds->isEmpty()) {
                 $query->whereRaw('1 = 0');
             } else {
-                $query->whereIn('id', $sportIds);
+                $query->whereIn('id', $allSportIds);
             }
         }
 
@@ -129,6 +140,11 @@ class SportController extends Controller
             'qual_min_height_cm' => ['nullable', 'integer', 'min:100', 'max:260'],
             'qual_genders' => ['nullable', 'array'],
             'qual_genders.*' => ['string', 'in:male,female,other,prefer_not_to_say'],
+            'require_report_card' => ['boolean'],
+            'require_medical_form' => ['boolean'],
+            'require_bp' => ['boolean'],
+            'require_heart_rate' => ['boolean'],
+            'require_allergies' => ['boolean'],
         ]);
 
         $sport->update([
@@ -141,6 +157,11 @@ class SportController extends Controller
             'qual_allowed_genders' => isset($validated['qual_genders']) && count($validated['qual_genders']) > 0
                 ? array_values(array_unique($validated['qual_genders']))
                 : null,
+            'require_report_card' => $request->has('require_report_card'),
+            'require_medical_form' => $request->has('require_medical_form'),
+            'require_bp' => $request->has('require_bp'),
+            'require_heart_rate' => $request->has('require_heart_rate'),
+            'require_allergies' => $request->has('require_allergies'),
         ]);
 
         activity()

@@ -9,16 +9,26 @@ use Illuminate\Http\Request;
 
 class SportApplicationController extends Controller
 {
+    public function review(Sport $sport, SportApplication $application)
+    {
+        $this->authorize('assignStudents', $sport);
+        abort_unless((int) $application->sport_id === (int) $sport->id, 404);
+
+        return view('sports.applications.review', compact('sport', 'application'));
+    }
+
     public function approve(Request $request, Sport $sport, SportApplication $application): RedirectResponse
     {
         $this->authorize('assignStudents', $sport);
         abort_unless((int) $application->sport_id === (int) $sport->id, 404);
         abort_unless($application->status === 'pending', 422);
 
-        $application->user->sports()->syncWithoutDetaching([$sport->id]);
         $application->update(['status' => 'approved']);
+        $sport->students()->syncWithoutDetaching($application->user_id);
 
-        return redirect()->route('sports.show', $sport)
+        $application->user->notify(new \App\Notifications\SportApplicationStatusChanged($application, 'approved'));
+
+        return $this->redirectRoutePreservingModal($request, 'sports.show', $sport)
             ->with('status', 'Application approved and student assigned.');
     }
 
@@ -30,7 +40,9 @@ class SportApplicationController extends Controller
 
         $application->update(['status' => 'rejected']);
 
-        return redirect()->route('sports.show', $sport)
+        $application->user->notify(new \App\Notifications\SportApplicationStatusChanged($application, 'rejected'));
+
+        return $this->redirectRoutePreservingModal($request, 'sports.show', $sport)
             ->with('status', 'Application rejected.');
     }
 }
