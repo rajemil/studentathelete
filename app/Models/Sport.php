@@ -10,14 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sport extends Model
 {
-<<<<<<< Updated upstream
+    use BelongsToOrganization;
+
     public function getRouteKeyName(): string
     {
         return 'slug';
     }
-=======
-    use BelongsToOrganization;
->>>>>>> Stashed changes
 
     protected $fillable = [
         'organization_id',

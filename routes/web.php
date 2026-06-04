@@ -81,7 +81,7 @@ Route::middleware(['auth', 'verified', 'org'])->group(function () {
         Route::get('/admin/reports', AdminReportsController::class)->name('admin.reports.index');
         Route::get('/admin/reports/performance-scores.csv', [AdminReportsController::class, 'export'])
             ->name('admin.reports.performance_scores_csv');
-        Route::get('/admin/system', AdminSystemConfigController::class)->name('admin.system.index');
+        Route::get('/admin/system', [AdminSystemConfigController::class, 'index'])->name('admin.system.index');
 
         Route::get('/admin/academics', [AdminAcademicController::class, 'index'])->name('admin.academics.index');
         Route::post('/admin/academics/record', [AdminAcademicController::class, 'storeRecord'])->name('admin.academics.records.store');

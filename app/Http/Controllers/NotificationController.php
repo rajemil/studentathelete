@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SportApplication;
+use App\Models\User;
+use App\Services\Staff\PendingSportApplicationsCount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -10,9 +13,12 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        if (! $user instanceof User) {
+            abort(401);
+        }
 
         // Self-healing: If user is staff, ensure they have notifications for all current pending applications in their sports
-        if (in_array($user->role, ['coach', 'instructor', 'admin'])) {
+        if (in_array($user->role, ['coach', 'instructor', 'admin'], true)) {
             $this->ensurePendingApplicationNotifications($user);
         }
 
@@ -33,34 +39,35 @@ class NotificationController extends Controller
         ]);
     }
 
-    protected function ensurePendingApplicationNotifications($user)
+    protected function ensurePendingApplicationNotifications(User $user): void
     {
-        // 1. Get all sports this user manages (pivot + instructor + coached teams)
-        $assignedSportIds = $user->sports()->pluck('sports.id');
-        $teamSportIds = \App\Models\Team::whereIn('id', \App\Support\CoachedTeams::teamIds($user))->pluck('sport_id');
-        $instructorSportIds = \App\Models\Sport::where('instructor_user_id', $user->id)->pluck('id');
-        
-        $allSportIds = $assignedSportIds->merge($teamSportIds)->merge($instructorSportIds)->unique();
-
-        if ($allSportIds->isEmpty()) return;
-
-        // 2. Find pending applications for these sports
-        $pendingApplications = \App\Models\SportApplication::whereIn('sport_id', $allSportIds)
-            ->where('status', 'pending')
-            ->with(['sport', 'user'])
-            ->get();
-
-        foreach ($pendingApplications as $app) {
-            // 3. Robust check: Does any notification (read or unread) contain this application ID?
-            // We use a broader query to avoid duplicates across different DB drivers
-            $exists = $user->notifications()
-                ->where('data', 'like', '%"sport_application_id":' . $app->id . '%')
-                ->exists();
-
-            if (!$exists) {
-                $user->notify(new \App\Notifications\SportApplicationSubmitted($app));
-            }
+        if ($user->role === 'admin') {
+            return;
         }
+
+        $sportIds = PendingSportApplicationsCount::managedSportIds($user);
+        if ($sportIds->isEmpty()) {
+            return;
+        }
+
+        // Process in chunks — never load all pending rows + relations into memory.
+        SportApplication::query()
+            ->where('status', 'pending')
+            ->whereIn('sport_id', $sportIds)
+            ->select(['id', 'sport_id', 'user_id', 'status'])
+            ->orderBy('id')
+            ->chunkById(50, function ($applications) use ($user): void {
+                foreach ($applications as $application) {
+                    $exists = $user->notifications()
+                        ->where('data', 'like', '%"sport_application_id":'.$application->id.'%')
+                        ->exists();
+
+                    if (! $exists) {
+                        $application->loadMissing(['sport:id,slug,name', 'user:id,name']);
+                        $user->notify(new \App\Notifications\SportApplicationSubmitted($application));
+                    }
+                }
+            });
     }
 
     public function read(Request $request, string $id): JsonResponse

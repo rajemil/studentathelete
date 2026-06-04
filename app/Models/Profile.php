@@ -64,7 +64,6 @@ class Profile extends Model
         return $this->belongsTo(User::class);
     }
 
-<<<<<<< Updated upstream
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
@@ -78,7 +77,8 @@ class Profile extends Model
     public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);
-=======
+    }
+
     protected function age(): Attribute
     {
         return Attribute::make(
@@ -100,6 +100,5 @@ class Profile extends Model
                 return round($attributes['weight_kg'] / ($heightM ** 2), 2);
             }
         );
->>>>>>> Stashed changes
     }
 }
