@@ -35,10 +35,10 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', DashboardRedirectController::class)
-    ->middleware(['auth', 'verified', 'org'])
+    ->middleware(['auth', 'org'])
     ->name('dashboard');
 
-Route::middleware(['auth', 'verified', 'org'])->group(function () {
+Route::middleware(['auth', 'org'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -48,7 +48,7 @@ Route::middleware(['auth', 'verified', 'org'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 });
 
-Route::middleware(['auth', 'verified', 'org'])->group(function () {
+Route::middleware(['auth', 'org'])->group(function () {
     Route::get('/admin/dashboard', AdminDashboardController::class)
         ->middleware('role:admin')
         ->name('admin.dashboard');

@@ -58,6 +58,19 @@ final class RegistrationRules
     /**
      * @return array<string, mixed>
      */
+    /**
+     * @return array<string, mixed>
+     */
+    public static function facultyPhotoField(): array
+    {
+        return [
+            'photo' => ['nullable', 'file', 'image', 'max:5120'],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public static function facultyProfileFields(bool $requireAll = true): array
     {
         $required = $requireAll ? 'required' : 'nullable';

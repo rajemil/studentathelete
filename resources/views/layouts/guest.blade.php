@@ -37,7 +37,7 @@
                 <span class="hover:accent-orange">Back to Home</span>
             </a>
 
-            <div class="w-full max-w-md">
+            <div @class(['w-full', 'max-w-3xl' => $wide ?? false, 'max-w-md' => ! ($wide ?? false)])>
                 <a href="/" class="inline-flex items-center gap-3">
                     <div class="h-10 w-10 rounded-2xl bg-white/5 border border-white/10 grid place-items-center">
                         <span class="text-sm font-semibold tracking-tight"><span class="accent-orange">A</span>I</span>

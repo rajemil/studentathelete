@@ -37,12 +37,13 @@ class CoachRegisteredUserController extends Controller
             ],
             RegistrationRules::passwordRequired(),
             RegistrationRules::facultyProfileFields(true),
+            RegistrationRules::facultyPhotoField(),
             [
                 'achievements' => ['nullable', 'string', 'max:5000'],
             ],
         ));
 
-        $user = DB::transaction(function () use ($validated) {
+        $user = DB::transaction(function () use ($validated, $request) {
             $user = User::create([
                 'organization_id' => Organization::defaultId(),
                 'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
@@ -51,7 +52,7 @@ class CoachRegisteredUserController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            Profile::create([
+            $profile = Profile::create([
                 'user_id' => $user->id,
                 'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
                 'gender' => RegistrationRules::normalizeGender($validated['gender']),
@@ -61,6 +62,12 @@ class CoachRegisteredUserController extends Controller
                 'profession' => $validated['profession'],
                 'coaching_experience_years' => $validated['coaching_experience_years'],
             ]);
+
+            if ($request->hasFile('photo')) {
+                $profile->update([
+                    'photo_path' => $request->file('photo')->store('faculty-photos', 'public'),
+                ]);
+            }
 
             return $user;
         });

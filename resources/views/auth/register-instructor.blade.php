@@ -1,46 +1,78 @@
-<x-guest-layout>
-    <form method="POST" action="{{ route('register.instructor') }}" x-data="{ birthdate: '{{ old('birthdate', '') }}', calcAge() { if (!this.birthdate) return ''; const d = new Date(this.birthdate); if (String(d) === 'Invalid Date') return ''; const now = new Date(); let age = now.getFullYear() - d.getFullYear(); const m = now.getMonth() - d.getMonth(); if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--; return age < 0 ? '' : age; } }">
+<x-guest-layout wide>
+    <form
+        method="POST"
+        action="{{ route('register.instructor') }}"
+        enctype="multipart/form-data"
+        x-data="{ photoUrl: null }"
+        class="rounded-2xl border border-white/10 bg-gray-900/90 backdrop-blur-xl shadow-2xl overflow-hidden"
+    >
         @csrf
 
-        <div class="mb-5">
-            <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Instructor registration</h1>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create an instructor account to manage classes, performance, and student health signals.</p>
+        <div class="px-6 py-5 border-b border-white/10">
+            <h1 class="text-xl font-semibold text-white">Instructor registration</h1>
+            <p class="mt-1 text-sm text-gray-400">Create an instructor account to manage classes, performance, and student health signals.</p>
         </div>
 
-        <div class="space-y-4">
-            @include('partials.person-name-fields')
-
-            <div>
-                <x-input-label for="email" value="Email" />
-                <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-                <x-input-error :messages="$errors->get('email')" class="mt-2" />
-            </div>
-
-            @include('partials.faculty-profile-fields')
-
-            <div>
-                <x-input-label for="achievements" value="Qualifications" />
-                <textarea id="achievements" name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">{{ old('achievements') }}</textarea>
-                <x-input-error :messages="$errors->get('achievements')" class="mt-2" />
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <x-input-label for="password" value="Password" />
-                    <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div class="p-6 space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-4">
+                    @include('partials.profile-photo-upload')
                 </div>
-                <div>
-                    <x-input-label for="password_confirmation" value="Confirm Password" />
-                    <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
-                    <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+
+                <div class="lg:col-span-8 space-y-6">
+                    <section class="space-y-4">
+                        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Account</h2>
+                        @include('partials.person-name-fields')
+
+                        <div>
+                            <x-input-label for="email" value="Email" />
+                            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
+                            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                        </div>
+                    </section>
+
+                    <section class="space-y-4">
+                        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Profile details</h2>
+                        @include('partials.faculty-profile-fields')
+                    </section>
+
+                    <section class="space-y-4">
+                        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Background</h2>
+                        <div>
+                            <x-input-label for="achievements" value="Qualifications" />
+                            <textarea
+                                id="achievements"
+                                name="achievements"
+                                rows="4"
+                                class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-white/35 transition"
+                                placeholder="Certifications, teaching experience, specialties…"
+                            >{{ old('achievements') }}</textarea>
+                            <x-input-error :messages="$errors->get('achievements')" class="mt-2" />
+                        </div>
+                    </section>
+
+                    <section class="space-y-4">
+                        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Security</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <x-input-label for="password" value="Password" />
+                                <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
+                                <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                            </div>
+                            <div>
+                                <x-input-label for="password_confirmation" value="Confirm password" />
+                                <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
+                                <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center justify-between mt-6">
-            <a class="text-sm text-gray-600 dark:text-gray-400 hover:underline" href="{{ route('register') }}">Back</a>
-            <x-primary-button>Register</x-primary-button>
+        <div class="px-6 py-4 border-t border-white/10 flex items-center justify-between gap-4 bg-black/20">
+            <a class="text-sm text-gray-400 hover:text-white transition" href="{{ route('register') }}">← Back</a>
+            <x-primary-button class="!bg-gradient-to-br !from-[#FF7A1A] !to-[#FFB24D] !border-0">Register</x-primary-button>
         </div>
     </form>
 </x-guest-layout>

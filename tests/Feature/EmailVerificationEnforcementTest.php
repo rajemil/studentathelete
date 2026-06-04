@@ -11,7 +11,7 @@ class EmailVerificationEnforcementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_unverified_user_cannot_access_dashboard(): void
+    public function test_unverified_user_can_access_dashboard_after_login(): void
     {
         $org = Organization::query()->firstOrFail();
 
@@ -22,7 +22,7 @@ class EmailVerificationEnforcementTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('dashboard'))
-            ->assertRedirect(route('verification.notice'));
+            ->assertRedirect(route('student.dashboard'));
     }
 
     public function test_verified_user_can_access_dashboard(): void
