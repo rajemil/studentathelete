@@ -27,7 +27,7 @@
 
     @if($narrativeRow && is_array($narrativeRow->payload) && filled(data_get($narrativeRow->payload, 'narrative')))
         <div class="px-6 py-4 border-b border-gray-200/60 dark:border-white/10 bg-gray-50/80 dark:bg-white/[0.03]">
-            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">AI summary</div>
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Performance analytics summary</div>
             <p class="mt-2 text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{{ data_get($narrativeRow->payload, 'narrative') }}</p>
             @if(filled(data_get($narrativeRow->payload, 'actionable')))
                 <p class="mt-2 text-sm font-medium text-[#FF7A1A] dark:text-[#FFB24D]">{{ data_get($narrativeRow->payload, 'actionable') }}</p>

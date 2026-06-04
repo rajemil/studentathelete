@@ -38,6 +38,10 @@ class StudentParticipationLogsController extends Controller
     {
         $this->authorize('create', ParticipationLog::class);
 
+        if ($request->has('sport_id') && ($request->input('sport_id') === 0 || $request->input('sport_id') === '0')) {
+            $request->merge(['sport_id' => null]);
+        }
+
         $user = $request->user();
 
         $validated = $request->validate([
@@ -49,11 +53,17 @@ class StudentParticipationLogsController extends Controller
         ]);
 
         $sportId = null;
-        if (! empty($validated['sport_id'])) {
-            $sportId = (int) Sport::query()
+        if (! empty($validated['sport_id']) && (int) $validated['sport_id'] !== 0) {
+            $resolved = Sport::query()
                 ->where('organization_id', $user->organization_id)
                 ->whereKey((int) $validated['sport_id'])
                 ->value('id');
+
+            if ($resolved === null) {
+                return back()->withErrors(['sport_id' => 'The selected sport does not belong to your organization.'])->withInput();
+            }
+
+            $sportId = (int) $resolved;
         }
 
         $log = ParticipationLog::query()->create([

@@ -120,9 +120,9 @@ function initAnalyticsUI() {
 
         if (!userId) throw new Error('Select an athlete.');
 
-        setLoading(submitBtn, true, 'Predicting...');
+        setLoading(submitBtn, true, 'Analyzing...');
         setLoading(recBtn, true, 'Working...');
-        toast(root, 'Fetching prediction…', 'info');
+        toast(root, 'Running performance analytics…', 'info');
 
         const params = new URLSearchParams();
         if (sportId) params.set('sport_id', String(sportId));
@@ -173,7 +173,7 @@ function initAnalyticsUI() {
             predJsonEl.textContent = prettyJson({ ...pred, recommendations: rec.recommendations });
         }
 
-        toast(root, 'Prediction ready.', 'success');
+        toast(root, 'Performance analytics ready.', 'success');
         setLoading(submitBtn, false);
         setLoading(recBtn, false);
     }

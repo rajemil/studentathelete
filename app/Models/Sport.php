@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -9,10 +10,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sport extends Model
 {
+<<<<<<< Updated upstream
     public function getRouteKeyName(): string
     {
         return 'slug';
     }
+=======
+    use BelongsToOrganization;
+>>>>>>> Stashed changes
 
     protected $fillable = [
         'organization_id',

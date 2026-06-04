@@ -16,7 +16,7 @@
             </a>
             <a href="{{ route('register.instructor') }}" class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 hover:shadow-md transition">
                 <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Register as Instructor</div>
-                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Classes, student performance, health logs, and AI insights.</div>
+                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Classes, student athlete performance, health logs, and predictive analytics.</div>
             </a>
         </div>
 

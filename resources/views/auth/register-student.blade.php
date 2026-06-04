@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register.student') }}" x-data="{ h: '{{ old('height_cm', '') }}', w: '{{ old('weight_kg', '') }}', bmi: '' }" x-init="
+    <form method="POST" action="{{ route('register.student') }}" x-data="{ birthdate: '{{ old('birthdate', '') }}', h: '{{ old('height_cm', '') }}', w: '{{ old('weight_kg', '') }}', bmi: '', calcAge() { if (!this.birthdate) return ''; const d = new Date(this.birthdate); if (String(d) === 'Invalid Date') return ''; const now = new Date(); let age = now.getFullYear() - d.getFullYear(); const m = now.getMonth() - d.getMonth(); if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--; return age < 0 ? '' : age; } }" x-init="
         const calc = () => {
             const hc = parseFloat(h); const wk = parseFloat(w);
             if (!hc || !wk) { bmi = ''; return; }
@@ -10,36 +10,52 @@
     ">
         @csrf
 
+        @if(!empty($invitationToken))
+            <input type="hidden" name="invitation_token" value="{{ $invitationToken }}" />
+        @endif
+
         <div class="mb-5">
-            <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Student registration</h1>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a student account with athlete profile details.</p>
+            <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Student Athlete registration</h1>
+            @if($invitedUser ?? null)
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Complete your invited registration. Your email is pre-filled from your invitation.</p>
+            @else
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a Student Athlete account with profile details.</p>
+            @endif
         </div>
 
         <div class="space-y-4">
-            <div>
-                <x-input-label for="name" value="Full Name" />
-                <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
-                <x-input-error :messages="$errors->get('name')" class="mt-2" />
-            </div>
+            @include('partials.person-name-fields', ['user' => $invitedUser ?? null])
 
             <div>
                 <x-input-label for="email" value="Email" />
-                <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
+                <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $invitedUser->email ?? '')" @if($invitedUser ?? null) readonly @endif required autocomplete="username" />
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            </div>
+
+            <div>
+                <x-input-label for="course" value="Course / Program" />
+                <x-text-input id="course" class="block mt-1 w-full" type="text" name="course" :value="old('course')" required />
+                <x-input-error :messages="$errors->get('course')" class="mt-2" />
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <x-input-label for="age" value="Age" />
-                    <x-text-input id="age" class="block mt-1 w-full" type="number" name="age" min="10" max="80" :value="old('age')" required />
-                    <x-input-error :messages="$errors->get('age')" class="mt-2" />
+                    <x-input-label for="birthdate" value="Birthday" />
+                    <x-text-input id="birthdate" class="block mt-1 w-full" type="date" name="birthdate" x-model="birthdate" :value="old('birthdate')" required />
+                    <x-input-error :messages="$errors->get('birthdate')" class="mt-2" />
+                </div>
+                <div>
+                    <x-input-label value="Age (auto)" />
+                    <div class="mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-3 flex items-center text-sm text-gray-900 dark:text-gray-100">
+                        <span x-text="calcAge() || '—'"></span>
+                    </div>
                 </div>
                 <div>
                     <x-input-label for="gender" value="Gender" />
                     <select id="gender" name="gender" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
                         <option value="">Select...</option>
-                        @foreach(['Male','Female','Non-binary','Prefer not to say'] as $g)
-                            <option value="{{ $g }}" @selected(old('gender')===$g)>{{ $g }}</option>
+                        @foreach(['male' => 'Male', 'female' => 'Female', 'other' => 'Other', 'prefer_not_to_say' => 'Prefer not to say'] as $val => $label)
+                            <option value="{{ $val }}" @selected(old('gender')===$val)>{{ $label }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('gender')" class="mt-2" />

@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PerformanceScore extends Model
 {
+    use BelongsToOrganization;
+
+    protected static function organizationScopeRelation(): ?string
+    {
+        return 'student';
+    }
+
     protected $fillable = [
         'user_id',
         'sport_id',

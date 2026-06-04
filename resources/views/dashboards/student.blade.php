@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Student Dashboard</h2>
+            <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Student Athlete Dashboard</h2>
             <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Your progress, performance trends, and recommendations.</div>
         </div>
     </x-slot>

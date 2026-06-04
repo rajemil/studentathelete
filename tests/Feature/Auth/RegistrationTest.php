@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Organization;
+use App\Models\Profile;
 use App\Models\Sport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,25 +21,39 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        $org = Organization::query()->firstOrFail();
+
         $sport = Sport::query()->create([
             'name' => 'Basketball',
             'slug' => 'basketball',
             'description' => null,
+            'organization_id' => $org->id,
         ]);
 
         $response = $this->post('/register/student', [
-            'name' => 'Test Student',
+            'first_name' => 'Test',
+            'last_name' => 'Student',
             'email' => 'student@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-            'age' => 18,
-            'gender' => 'Male',
+            'password' => 'SecurePass1!',
+            'password_confirmation' => 'SecurePass1!',
+            'birthdate' => '2005-06-15',
+            'gender' => 'male',
             'address' => 'Test Address',
+            'course' => 'BS Sports Science',
             'height_cm' => 170,
             'weight_kg' => 65,
             'sports_interested' => [$sport->id],
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('verification.notice'));
+
+        $this->assertTrue(
+            Profile::query()
+                ->where('course', 'BS Sports Science')
+                ->where('height_cm', 170)
+                ->where('weight_kg', 65)
+                ->whereDate('birthdate', '2005-06-15')
+                ->exists()
+        );
     }
 }

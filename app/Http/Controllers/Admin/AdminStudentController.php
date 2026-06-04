@@ -4,20 +4,22 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\StudentWelcomeMail;
+use App\Notifications\StudentInvitationNotification;
 use App\Models\Profile;
 use App\Models\Sport;
 use App\Models\User;
-use App\Models\Course;
-use App\Models\YearLevel;
-use App\Models\Section;
-use App\Support\AccessCode;
+use App\Support\PersonName;
+use App\Support\RegistrationRules;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminStudentController extends Controller
@@ -35,63 +37,53 @@ class AdminStudentController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        $courses = Course::where('organization_id', $orgId)->orderBy('name')->get();
-        $yearLevels = YearLevel::where('organization_id', $orgId)->orderBy('name')->get();
-        $sections = Section::where('organization_id', $orgId)->orderBy('name')->get();
+        $sports = Sport::query()
+            ->where('organization_id', $orgId)
+            ->orderBy('name')
+            ->get();
 
-        return view('admin.students.index', compact('students', 'courses', 'yearLevels', 'sections'));
+        return view('admin.students.index', compact('students', 'sports'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('viewAny', User::class);
 
-        $orgId = $request->user()->organization_id;
+        $orgId = (int) $request->user()->organization_id;
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'birthdate' => ['nullable', 'date'],
-            'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'height_cm' => ['nullable', 'numeric', 'min:50', 'max:300'],
-            'weight_kg' => ['nullable', 'numeric', 'min:10', 'max:350'],
-            'photo' => ['nullable', 'file', 'image', 'max:5120'],
-            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
-            'year_level_id' => ['nullable', 'integer', 'exists:year_levels,id'],
-            'section_id' => ['nullable', 'integer', 'exists:sections,id'],
-        ]);
+        $validated = $request->validate(array_merge(
+            RegistrationRules::nameFields(),
+            [
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            ],
+            RegistrationRules::passwordRequired(),
+            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::sportIds($orgId),
+            [
+                'photo' => ['nullable', 'file', 'image', 'max:5120'],
+            ],
+        ));
 
-        $plainCode = AccessCode::generate(6);
+        $invitationToken = Str::random(64);
 
         $user = User::query()->create([
             'organization_id' => $orgId,
-            'name' => $validated['name'],
+            'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
             'email' => $validated['email'],
             'role' => 'student',
-            'password' => Hash::make($plainCode),
-            'email_verified_at' => CarbonImmutable::now(),
+            'password' => Hash::make($validated['password']),
+            'invitation_token' => $invitationToken,
+            'invited_at' => now(),
         ]);
-
-        $birthdate = isset($validated['birthdate']) ? CarbonImmutable::parse($validated['birthdate']) : null;
-        $computedAge = $birthdate ? (int) $birthdate->age : null;
-
-        $height = isset($validated['height_cm']) ? (float) $validated['height_cm'] : null;
-        $weight = isset($validated['weight_kg']) ? (float) $validated['weight_kg'] : null;
-        $bmi = ($height && $weight && $height > 0) ? round($weight / (($height / 100.0) ** 2), 2) : null;
 
         $profile = Profile::query()->create([
             'user_id' => $user->id,
-            'birthdate' => $birthdate?->toDateString(),
-            'age' => $computedAge,
-            'gender' => $validated['gender'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'height_cm' => $height,
-            'weight_kg' => $weight,
-            'bmi' => $bmi,
-            'course_id' => $validated['course_id'] ?? null,
-            'year_level_id' => $validated['year_level_id'] ?? null,
-            'section_id' => $validated['section_id'] ?? null,
+            'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
+            'gender' => RegistrationRules::normalizeGender($validated['gender']),
+            'address' => $validated['address'],
+            'course' => $validated['course'],
+            'height_cm' => (float) $validated['height_cm'],
+            'weight_kg' => (float) $validated['weight_kg'],
         ]);
 
         if ($request->hasFile('photo')) {
@@ -99,19 +91,10 @@ class AdminStudentController extends Controller
             $profile->update(['photo_path' => $path]);
         }
 
-        $allowedSportIds = Sport::query()
-            ->where('organization_id', $orgId)
-            ->pluck('id')
-            ->map(fn ($v) => (int) $v)
-            ->all();
+        $user->sports()->sync($this->filterSportIds($validated['sport_ids'] ?? [], $orgId));
 
-        $desiredSportIds = collect($validated['sport_ids'] ?? [])
-            ->map(fn ($v) => (int) $v)
-            ->filter(fn (int $id) => in_array($id, $allowedSportIds, true))
-            ->unique()
-            ->values();
-
-        $user->sports()->sync($desiredSportIds->all());
+        event(new Registered($user));
+        $user->sendEmailVerificationNotification();
 
         activity()
             ->performedOn($user)
@@ -119,17 +102,17 @@ class AdminStudentController extends Controller
             ->log('student_created');
 
         try {
-            Mail::to($user->email)->send(new StudentWelcomeMail($user, $plainCode));
+            $user->notify(new StudentInvitationNotification($invitationToken));
+            Mail::to($user->email)->send(new StudentWelcomeMail($user));
         } catch (\Throwable $e) {
             Log::error('student_welcome_mail_failed', ['user_id' => $user->id, 'exception' => $e->getMessage()]);
 
             return redirect()->route('admin.students.index')
-                ->with('status', 'Student created, but the welcome email could not be sent. Share this access code with the student (shown once).')
-                ->with('new_student_code', $plainCode);
+                ->with('status', 'Student created. Verification email was queued; welcome email could not be sent.');
         }
 
         return redirect()->route('admin.students.index')
-            ->with('status', 'Student account created. A 6-character access code was sent to their email.');
+            ->with('status', 'Student account created. They must verify their email before signing in.');
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -137,23 +120,23 @@ class AdminStudentController extends Controller
         $this->ensureStudent($user);
         $this->authorize('updateRole', $user);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'password' => ['nullable', 'string', 'min:8'],
-            'birthdate' => ['nullable', 'date'],
-            'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'height_cm' => ['nullable', 'numeric', 'min:50', 'max:300'],
-            'weight_kg' => ['nullable', 'numeric', 'min:10', 'max:350'],
-            'photo' => ['nullable', 'file', 'image', 'max:5120'],
-            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
-            'year_level_id' => ['nullable', 'integer', 'exists:year_levels,id'],
-            'section_id' => ['nullable', 'integer', 'exists:sections,id'],
-        ]);
+        $orgId = (int) $request->user()->organization_id;
+
+        $validated = $request->validate(array_merge(
+            RegistrationRules::nameFields(),
+            [
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            ],
+            RegistrationRules::passwordOptional(),
+            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::sportIds($orgId),
+            [
+                'photo' => ['nullable', 'file', 'image', 'max:5120'],
+            ],
+        ));
 
         $user->update([
-            'name' => $validated['name'],
+            'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
             'email' => $validated['email'],
         ]);
 
@@ -161,25 +144,14 @@ class AdminStudentController extends Controller
             $user->update(['password' => Hash::make($validated['password'])]);
         }
 
-        $birthdate = isset($validated['birthdate']) ? CarbonImmutable::parse($validated['birthdate']) : null;
-        $computedAge = $birthdate ? (int) $birthdate->age : null;
-
-        $height = isset($validated['height_cm']) ? (float) $validated['height_cm'] : null;
-        $weight = isset($validated['weight_kg']) ? (float) $validated['weight_kg'] : null;
-        $bmi = ($height && $weight && $height > 0) ? round($weight / (($height / 100.0) ** 2), 2) : null;
-
         $profile = $user->profile ?: Profile::query()->create(['user_id' => $user->id]);
         $profile->fill([
-            'birthdate' => $birthdate?->toDateString(),
-            'age' => $computedAge,
-            'gender' => $validated['gender'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'height_cm' => $height,
-            'weight_kg' => $weight,
-            'bmi' => $bmi,
-            'course_id' => $validated['course_id'] ?? null,
-            'year_level_id' => $validated['year_level_id'] ?? null,
-            'section_id' => $validated['section_id'] ?? null,
+            'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
+            'gender' => RegistrationRules::normalizeGender($validated['gender']),
+            'address' => $validated['address'],
+            'course' => $validated['course'],
+            'height_cm' => (float) $validated['height_cm'],
+            'weight_kg' => (float) $validated['weight_kg'],
         ])->save();
 
         if ($request->hasFile('photo')) {
@@ -190,8 +162,7 @@ class AdminStudentController extends Controller
             $profile->update(['photo_path' => $path]);
         }
 
-        // Sports are now chosen by students themselves.
-        // $user->sports()->sync($desiredSportIds->all());
+        $user->sports()->sync($this->filterSportIds($validated['sport_ids'] ?? [], $orgId));
 
         activity()
             ->performedOn($user)
@@ -220,6 +191,28 @@ class AdminStudentController extends Controller
 
         return redirect()->route('admin.students.index')
             ->with('status', 'Student removed.');
+    }
+
+    /**
+     * @param  list<int|string>  $ids
+     * @return list<int>
+     */
+    private function filterSportIds(array $ids, int $orgId): array
+    {
+        $allowed = Sport::query()
+            ->where('organization_id', $orgId)
+            ->pluck('id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
+        $allowedSet = array_flip($allowed);
+
+        return collect($ids)
+            ->map(fn ($v) => (int) $v)
+            ->filter(fn (int $id) => isset($allowedSet[$id]))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function ensureStudent(User $user): void

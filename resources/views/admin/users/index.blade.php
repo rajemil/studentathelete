@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
                 <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Faculty management</h2>
-                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage coach accounts and sports assignments.</div>
+                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage coach and instructor accounts.</div>
             </div>
         </div>
     </x-slot>
@@ -62,90 +62,52 @@
                                 />
                                 <x-input-error :messages="$errors->get('photo')" class="mt-1" />
 
-                                <div class="pt-2 border-t border-gray-200/60 dark:border-white/10 space-y-3">
-                                    <div>
-                                        <x-input-label for="birthdate" value="Birthdate (optional)" />
-                                        <x-text-input id="birthdate" name="birthdate" type="date" class="mt-1 block w-full" x-model="birthdate" />
-                                        <x-input-error :messages="$errors->get('birthdate')" class="mt-2" />
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Age (auto)" />
-                                        <div class="mt-1 w-full rounded-md border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-gray-900/60 px-3 py-2 text-sm text-gray-700 dark:text-gray-200" x-text="calcAge() || '—'"></div>
-                                    </div>
-                                    <div>
-                                        <x-input-label for="gender" value="Gender (optional)" />
-                                        <select id="gender" name="gender" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">
-                                            <option value="">—</option>
-                                            <option value="male" @selected(old('gender') === 'male')>Male</option>
-                                            <option value="female" @selected(old('gender') === 'female')>Female</option>
-                                            <option value="other" @selected(old('gender') === 'other')>Other</option>
-                                            <option value="prefer_not_to_say" @selected(old('gender') === 'prefer_not_to_say')>Prefer not to say</option>
-                                        </select>
-                                        <x-input-error :messages="$errors->get('gender')" class="mt-2" />
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
                         <div class="lg:col-span-8 space-y-4">
                             <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Important details</div>
+                            @include('partials.person-name-fields')
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <x-input-label for="name" value="Name" />
-                                    <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required />
-                                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                                </div>
                                 <div>
                                     <x-input-label for="email" value="Email" />
                                     <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email')" required />
                                     <x-input-error :messages="$errors->get('email')" class="mt-2" />
                                 </div>
                                 <div>
-                                    <x-input-label value="Role" />
-                                    <div class="mt-1 flex items-center gap-2 rounded-md border border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-900/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
-                                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                        Coach
-                                    </div>
-                                    <input type="hidden" name="role" value="coach" x-model="role">
+                                    <x-input-label for="role" value="Role" />
+                                    <select id="role" name="role" x-model="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                                        @foreach(['coach','instructor'] as $r)
+                                            <option value="{{ $r }}" @selected(old('role', 'coach') === $r)>{{ ucfirst($r) }}</option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('role')" class="mt-2" />
                                 </div>
                                 <div>
-                                    <x-input-label for="password" value="Temporary password (optional)" />
-                                    <x-text-input id="password" name="password" type="text" class="mt-1 block w-full" :value="old('password')" />
-                                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave blank to use: <span class="font-semibold">password</span></div>
+                                    <x-input-label for="password" value="Password" />
+                                    <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" required autocomplete="new-password" />
                                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
                                 </div>
-                                <div class="sm:col-span-2">
-                                    <x-input-label for="address" value="Address (optional)" />
-                                    <x-text-input id="address" name="address" type="text" class="mt-1 block w-full" :value="old('address')" />
-                                    <x-input-error :messages="$errors->get('address')" class="mt-2" />
-                                </div>
                                 <div>
-                                    <x-input-label for="profession" value="Profession (optional)" />
-                                    <x-text-input id="profession" name="profession" type="text" class="mt-1 block w-full" :value="old('profession')" />
-                                    <x-input-error :messages="$errors->get('profession')" class="mt-2" />
+                                    <x-input-label for="password_confirmation" value="Confirm password" />
+                                    <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" required autocomplete="new-password" />
                                 </div>
-                                <div>
-                                    <x-input-label for="field_expertise" value="Field expertise (optional)" />
-                                    <x-text-input id="field_expertise" name="field_expertise" type="text" class="mt-1 block w-full" :value="old('field_expertise')" />
-                                    <x-input-error :messages="$errors->get('field_expertise')" class="mt-2" />
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <x-input-label for="achievements" value="Achievements (optional)" />
-                                    <textarea id="achievements" name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">{{ old('achievements') }}</textarea>
-                                    <x-input-error :messages="$errors->get('achievements')" class="mt-2" />
-                                </div>
-                                <div>
-                                    <x-input-label for="coaching_experience_years" value="Experience years (optional)" />
-                                    <x-text-input id="coaching_experience_years" name="coaching_experience_years" type="number" class="mt-1 block w-full" :value="old('coaching_experience_years')" />
-                                    <x-input-error :messages="$errors->get('coaching_experience_years')" class="mt-2" />
-                                </div>
+                            </div>
+
+                            @include('partials.faculty-profile-fields')
+
+                            <div>
+                                <x-input-label for="achievements" value="Achievements" />
+                                <textarea id="achievements" name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">{{ old('achievements') }}</textarea>
+                                <x-input-error :messages="$errors->get('achievements')" class="mt-2" />
                             </div>
                         </div>
                     </div>
 
                     <div>
                         <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Sports assignment</div>
-                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Select sports to coach (instructor info is optional).</div>
+                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400" x-text="role === 'instructor' ? 'Select sports to teach (one instructor per sport).' : 'Select sports to coach.'"></div>
 
                         <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                             @foreach($sports as $sport)
@@ -338,67 +300,43 @@
                                                             class="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:opacity-90 dark:file:bg-white/10 dark:file:text-gray-100"
                                                         />
 
-                                                        <div class="pt-2 border-t border-gray-200/60 dark:border-white/10 space-y-3">
-                                                            <div>
-                                                                <x-input-label value="Birthdate (optional)" />
-                                                                <x-text-input name="birthdate" type="date" class="mt-1 block w-full" x-model="birthdate" />
-                                                            </div>
-                                                            <div>
-                                                                <x-input-label value="Age (auto)" />
-                                                                <div class="mt-1 w-full rounded-md border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-gray-900/60 px-3 py-2 text-sm text-gray-700 dark:text-gray-200" x-text="calcAge() || '—'"></div>
-                                                            </div>
-                                                            <div>
-                                                                <x-input-label value="Gender (optional)" />
-                                                                <select name="gender" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">
-                                                                    <option value="">—</option>
-                                                                    <option value="male" @selected(old('gender', $u->profile?->gender) === 'male')>Male</option>
-                                                                    <option value="female" @selected(old('gender', $u->profile?->gender) === 'female')>Female</option>
-                                                                    <option value="other" @selected(old('gender', $u->profile?->gender) === 'other')>Other</option>
-                                                                    <option value="prefer_not_to_say" @selected(old('gender', $u->profile?->gender) === 'prefer_not_to_say')>Prefer not to say</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </div>
 
                                                 <div class="lg:col-span-8 space-y-4">
                                                     <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Important details</div>
+
+                                                    @include('partials.person-name-fields', ['user' => $u])
+
                                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <x-input-label value="Name" />
-                                                            <x-text-input name="name" type="text" class="mt-1 block w-full" :value="old('name', $u->name)" required />
-                                                        </div>
                                                         <div>
                                                             <x-input-label value="Email" />
                                                             <x-text-input name="email" type="email" class="mt-1 block w-full" :value="old('email', $u->email)" required />
                                                         </div>
                                                         <div>
                                                             <x-input-label value="Role" />
-                                                            <div class="mt-1 flex items-center gap-2 rounded-md border border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-900/40 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 capitalize">
-                                                                <span class="h-2 w-2 rounded-full" :class="$u->role === 'admin' ? 'bg-amber-500' : 'bg-emerald-500'"></span>
-                                                                {{ $u->role }}
-                                                            </div>
-                                                        </div>
-                                                        <div class="sm:col-span-2">
-                                                            <x-input-label value="Address (optional)" />
-                                                            <x-text-input name="address" type="text" class="mt-1 block w-full" :value="old('address', $u->profile?->address)" />
+                                                            <select name="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                                                                @foreach(['coach','instructor'] as $r)
+                                                                    <option value="{{ $r }}" @selected(old('role', $u->role) === $r)>{{ ucfirst($r) }}</option>
+                                                                @endforeach
+                                                            </select>
                                                         </div>
                                                         <div>
-                                                            <x-input-label value="Profession (optional)" />
-                                                            <x-text-input name="profession" type="text" class="mt-1 block w-full" :value="old('profession', $u->profile?->profession)" />
+                                                            <x-input-label value="New password" />
+                                                            <x-text-input name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+                                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave blank to keep the current password.</p>
                                                         </div>
                                                         <div>
-                                                            <x-input-label value="Field expertise (optional)" />
-                                                            <x-text-input name="field_expertise" type="text" class="mt-1 block w-full" :value="old('field_expertise', $u->profile?->field_expertise)" />
+                                                            <x-input-label value="Confirm new password" />
+                                                            <x-text-input name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
                                                         </div>
-                                                        <div class="sm:col-span-2">
-                                                            <x-input-label value="Achievements (optional)" />
-                                                            <textarea name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">{{ old('achievements', $u->profile?->achievements) }}</textarea>
-                                                        </div>
-                                                        <div>
-                                                            <x-input-label value="Experience years (optional)" />
-                                                            <x-text-input name="coaching_experience_years" type="number" class="mt-1 block w-full" :value="old('coaching_experience_years', $u->profile?->coaching_experience_years)" />
-                                                        </div>
+                                                    </div>
+
+                                                    @include('partials.faculty-profile-fields', ['profile' => $u->profile])
+
+                                                    <div>
+                                                        <x-input-label value="Achievements" />
+                                                        <textarea name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">{{ old('achievements', $u->profile?->achievements) }}</textarea>
                                                     </div>
                                                 </div>
                                             </div>

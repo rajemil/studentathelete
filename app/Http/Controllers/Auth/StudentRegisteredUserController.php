@@ -7,26 +7,37 @@ use App\Models\Organization;
 use App\Models\Profile;
 use App\Models\Sport;
 use App\Models\User;
+use App\Support\PersonName;
+use App\Support\RegistrationRules;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class StudentRegisteredUserController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View
     {
+        $invitedUser = $this->resolveInvitedUser($request->query('token'));
+
+        $orgId = $invitedUser?->organization_id ?? Organization::defaultId();
+
         $sports = Sport::query()
-            ->where('organization_id', Organization::defaultId())
+            ->where('organization_id', $orgId)
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('auth.register-student', compact('sports'));
+        return view('auth.register-student', [
+            'sports' => $sports,
+            'invitedUser' => $invitedUser,
+            'invitationToken' => $request->query('token'),
+        ]);
     }
 
     /**
@@ -34,26 +45,33 @@ class StudentRegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        $invitedUser = $this->resolveInvitedUser($request->input('invitation_token'));
 
-            'age' => ['required', 'integer', 'min:10', 'max:80'],
-            'gender' => ['required', 'string', 'max:32'],
-            'address' => ['required', 'string', 'max:255'],
-            'height_cm' => ['required', 'numeric', 'min:50', 'max:300'],
-            'weight_kg' => ['required', 'numeric', 'min:10', 'max:350'],
-            'sports_interested' => ['nullable', 'array', 'max:20'],
-            'sports_interested.*' => ['integer', 'exists:sports,id'],
-        ]);
+        if ($invitedUser) {
+            return $this->completeInvitationRegistration($request, $invitedUser);
+        }
 
-        $bmi = $this->bmi((float) $validated['height_cm'], (float) $validated['weight_kg']);
+        return $this->registerNewStudent($request);
+    }
 
-        $user = DB::transaction(function () use ($validated, $bmi) {
+    private function registerNewStudent(Request $request): RedirectResponse
+    {
+        $orgId = Organization::defaultId();
+
+        $validated = $request->validate(array_merge(
+            RegistrationRules::nameFields(),
+            [
+                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            ],
+            RegistrationRules::passwordRequired(),
+            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::sportsInterested($orgId),
+        ));
+
+        $user = DB::transaction(function () use ($validated, $orgId) {
             $user = User::create([
-                'organization_id' => Organization::defaultId(),
-                'name' => $validated['name'],
+                'organization_id' => $orgId,
+                'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
                 'email' => $validated['email'],
                 'role' => 'student',
                 'password' => Hash::make($validated['password']),
@@ -61,19 +79,19 @@ class StudentRegisteredUserController extends Controller
 
             Profile::create([
                 'user_id' => $user->id,
-                'age' => $validated['age'],
-                'gender' => $validated['gender'],
+                'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
+                'gender' => RegistrationRules::normalizeGender($validated['gender']),
                 'address' => $validated['address'],
+                'course' => $validated['course'],
                 'height_cm' => $validated['height_cm'],
                 'weight_kg' => $validated['weight_kg'],
-                'bmi' => $bmi,
                 'sports_interested' => $validated['sports_interested'] ?? [],
             ]);
 
             if (! empty($validated['sports_interested'])) {
                 $user->sports()->sync(
                     Sport::query()
-                        ->where('organization_id', Organization::defaultId())
+                        ->where('organization_id', $orgId)
                         ->whereIn('id', $validated['sports_interested'])
                         ->pluck('id')
                 );
@@ -85,16 +103,90 @@ class StudentRegisteredUserController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
-        return redirect()->route('dashboard');
+        return redirect()->route('verification.notice');
     }
 
-    private function bmi(float $heightCm, float $weightKg): float
+    private function completeInvitationRegistration(Request $request, User $invitedUser): RedirectResponse
     {
-        $m = $heightCm / 100.0;
-        if ($m <= 0) {
-            return 0.0;
+        $orgId = (int) $invitedUser->organization_id;
+
+        $validated = $request->validate(array_merge(
+            RegistrationRules::nameFields(),
+            [
+                'email' => [
+                    'required',
+                    'string',
+                    'lowercase',
+                    'email',
+                    'max:255',
+                    Rule::unique(User::class)->ignore($invitedUser->id),
+                ],
+                'invitation_token' => ['required', 'string'],
+            ],
+            RegistrationRules::passwordRequired(),
+            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::sportsInterested($orgId),
+        ));
+
+        if (! hash_equals((string) $invitedUser->invitation_token, (string) $validated['invitation_token'])) {
+            throw ValidationException::withMessages([
+                'invitation_token' => 'This invitation link is invalid or has already been used.',
+            ]);
         }
 
-        return round($weightKg / ($m * $m), 2);
+        if (strtolower($validated['email']) !== strtolower($invitedUser->email)) {
+            throw ValidationException::withMessages([
+                'email' => 'Email must match the invited student athlete account.',
+            ]);
+        }
+
+        $user = DB::transaction(function () use ($validated, $invitedUser, $orgId) {
+            $invitedUser->update([
+                'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'invitation_token' => null,
+                'invited_at' => $invitedUser->invited_at,
+            ]);
+
+            $profile = $invitedUser->profile ?: Profile::query()->create(['user_id' => $invitedUser->id]);
+            $profile->fill([
+                'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
+                'gender' => RegistrationRules::normalizeGender($validated['gender']),
+                'address' => $validated['address'],
+                'course' => $validated['course'],
+                'height_cm' => $validated['height_cm'],
+                'weight_kg' => $validated['weight_kg'],
+                'sports_interested' => $validated['sports_interested'] ?? [],
+            ])->save();
+
+            if (! empty($validated['sports_interested'])) {
+                $invitedUser->sports()->sync(
+                    Sport::query()
+                        ->where('organization_id', $orgId)
+                        ->whereIn('id', $validated['sports_interested'])
+                        ->pluck('id')
+                );
+            }
+
+            return $invitedUser->fresh();
+        });
+
+        event(new Registered($user));
+        Auth::login($user);
+
+        return redirect()->route('verification.notice');
+    }
+
+    private function resolveInvitedUser(?string $token): ?User
+    {
+        if ($token === null || $token === '') {
+            return null;
+        }
+
+        return User::withoutGlobalScopes()
+            ->where('role', 'student')
+            ->where('invitation_token', $token)
+            ->first();
     }
 }

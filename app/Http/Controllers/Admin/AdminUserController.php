@@ -8,7 +8,10 @@ use App\Models\Profile;
 use App\Models\Sport;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\PersonName;
+use App\Support\RegistrationRules;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,51 +72,44 @@ class AdminUserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        $orgId = $request->user()->organization_id;
+        $orgId = (int) $request->user()->organization_id;
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['sometimes', 'string', 'in:coach,instructor'],
-            'password' => ['nullable', 'string', 'min:8'],
-            'birthdate' => ['nullable', 'date'],
-            'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'profession' => ['nullable', 'string', 'max:255'],
-            'field_expertise' => ['nullable', 'string', 'max:255'],
-            'achievements' => ['nullable', 'string'],
-            'coaching_experience_years' => ['nullable', 'integer', 'min:0', 'max:80'],
-            'photo' => ['nullable', 'file', 'image', 'max:5120'],
-            'sport_ids' => ['sometimes', 'array'],
-            'sport_ids.*' => ['integer'],
-        ]);
-
-        $password = $validated['password'] ?: 'password';
+        $validated = $request->validate(array_merge(
+            RegistrationRules::nameFields(),
+            [
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+                'role' => ['required', 'string', 'in:coach,instructor'],
+            ],
+            RegistrationRules::passwordRequired(),
+            RegistrationRules::facultyProfileFields(true),
+            RegistrationRules::sportIds($orgId),
+            [
+                'achievements' => ['nullable', 'string', 'max:5000'],
+                'photo' => ['nullable', 'file', 'image', 'max:5120'],
+            ],
+        ));
 
         $user = User::query()->create([
             'organization_id' => $orgId,
-            'name' => $validated['name'],
+            'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
             'email' => $validated['email'],
-            'role' => $validated['role'] ?? 'coach',
-            'password' => Hash::make($password),
-            'email_verified_at' => CarbonImmutable::now(),
+            'role' => $validated['role'],
+            'password' => Hash::make($validated['password']),
         ]);
-
-        $birthdate = isset($validated['birthdate']) ? CarbonImmutable::parse($validated['birthdate']) : null;
-        // profiles.age is an unsignedSmallInteger → must be an integer
-        $computedAge = $birthdate ? (int) $birthdate->age : null;
 
         $profile = Profile::query()->create([
             'user_id' => $user->id,
-            'birthdate' => $birthdate?->toDateString(),
-            'age' => $computedAge,
-            'gender' => $validated['gender'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'profession' => $validated['profession'] ?? null,
-            'field_expertise' => $validated['field_expertise'] ?? null,
+            'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
+            'gender' => RegistrationRules::normalizeGender($validated['gender']),
+            'address' => $validated['address'],
+            'profession' => $validated['profession'],
+            'field_expertise' => $validated['field_expertise'],
             'achievements' => $validated['achievements'] ?? null,
-            'coaching_experience_years' => $validated['coaching_experience_years'] ?? null,
+            'coaching_experience_years' => $validated['coaching_experience_years'],
         ]);
+
+        event(new Registered($user));
+        $user->sendEmailVerificationNotification();
 
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('faculty-photos', 'public');
@@ -189,6 +185,7 @@ class AdminUserController extends Controller
 
     public function edit(User $user): View
     {
+        $this->ensureFaculty($user);
         $this->authorize('view', $user);
 
         $orgId = auth()->user()->organization_id;
@@ -212,60 +209,45 @@ class AdminUserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $this->ensureFaculty($user);
         $this->authorize('updateRole', $user);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['sometimes', 'string', 'in:admin,coach,instructor'],
-            'sport_ids' => ['sometimes', 'array'],
-            'sport_ids.*' => ['integer'],
-            'birthdate' => ['nullable', 'date'],
-            'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'profession' => ['nullable', 'string', 'max:255'],
-            'field_expertise' => ['nullable', 'string', 'max:255'],
-            'achievements' => ['nullable', 'string'],
-            'coaching_experience_years' => ['nullable', 'integer', 'min:0', 'max:80'],
-            'photo' => ['nullable', 'file', 'image', 'max:5120'],
+        $orgId = (int) $request->user()->organization_id;
+
+        $validated = $request->validate(array_merge(
+            RegistrationRules::nameFields(),
+            [
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+                'role' => ['required', 'string', 'in:coach,instructor'],
+            ],
+            RegistrationRules::passwordOptional(),
+            RegistrationRules::facultyProfileFields(true),
+            RegistrationRules::sportIds($orgId),
+            [
+                'achievements' => ['nullable', 'string', 'max:5000'],
+                'photo' => ['nullable', 'file', 'image', 'max:5120'],
+            ],
+        ));
+
+        $user->update([
+            'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
+            'email' => $validated['email'],
+            'role' => $validated['role'],
         ]);
 
-        if ($user->role === 'admin' && $validated['role'] !== 'admin') {
-            $admins = User::query()
-                ->where('organization_id', $request->user()->organization_id)
-                ->where('role', 'admin')
-                ->count();
-
-            if ($admins <= 1) {
-                return back()->withErrors(['role' => 'You cannot demote the only administrator.']);
-            }
+        if (! empty($validated['password'])) {
+            $user->update(['password' => Hash::make($validated['password'])]);
         }
-
-        $updateData = [
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ];
-
-        if (isset($validated['role'])) {
-            $updateData['role'] = $validated['role'];
-        }
-
-        $user->update($updateData);
-
-        $birthdate = isset($validated['birthdate']) ? CarbonImmutable::parse($validated['birthdate']) : null;
-        // profiles.age is an unsignedSmallInteger → must be an integer
-        $computedAge = $birthdate ? (int) $birthdate->age : null;
 
         $profile = $user->profile ?: Profile::query()->create(['user_id' => $user->id]);
         $profile->fill([
-            'birthdate' => $birthdate?->toDateString(),
-            'age' => $computedAge,
-            'gender' => $validated['gender'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'profession' => $validated['profession'] ?? null,
-            'field_expertise' => $validated['field_expertise'] ?? null,
+            'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
+            'gender' => RegistrationRules::normalizeGender($validated['gender']),
+            'address' => $validated['address'],
+            'profession' => $validated['profession'],
+            'field_expertise' => $validated['field_expertise'],
             'achievements' => $validated['achievements'] ?? null,
-            'coaching_experience_years' => $validated['coaching_experience_years'] ?? null,
+            'coaching_experience_years' => $validated['coaching_experience_years'],
         ])->save();
 
         if ($request->hasFile('photo')) {
@@ -380,19 +362,8 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
+        $this->ensureFaculty($user);
         $this->authorize('delete', $user);
-
-        // Prevent deleting the last admin in the organization.
-        if ($user->role === 'admin') {
-            $admins = User::query()
-                ->where('organization_id', $request->user()->organization_id)
-                ->where('role', 'admin')
-                ->count();
-
-            if ($admins <= 1) {
-                return back()->withErrors(['delete' => 'You cannot delete the only administrator.']);
-            }
-        }
 
         if ($user->profile?->photo_path) {
             Storage::disk('public')->delete($user->profile->photo_path);
@@ -407,5 +378,14 @@ class AdminUserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('status', 'Faculty deleted.');
+    }
+
+    private function ensureFaculty(User $user): void
+    {
+        abort_unless(
+            in_array($user->role, ['coach', 'instructor'], true)
+            && (int) $user->organization_id === (int) auth()->user()->organization_id,
+            404
+        );
     }
 }

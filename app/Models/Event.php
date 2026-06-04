@@ -2,12 +2,25 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToOrganization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Event extends Model
 {
+    use BelongsToOrganization;
+
+    protected static function applyOrganizationScope(Builder $builder, int $orgId): void
+    {
+        $builder->where(function (Builder $q) use ($orgId) {
+            $q->whereHas('team', fn (Builder $t) => $t->where('organization_id', $orgId))
+                ->orWhereHas('sport', fn (Builder $s) => $s->where('organization_id', $orgId))
+                ->orWhereHas('creator', fn (Builder $u) => $u->where('organization_id', $orgId));
+        });
+    }
+
     protected $fillable = [
         'title',
         'description',

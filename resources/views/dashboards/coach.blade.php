@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Coach Dashboard</h2>
-            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Team insights, upcoming events, and athlete performance.</div>
+            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Team insights, upcoming events, and student athlete performance analytics.</div>
         </div>
     </x-slot>
 
@@ -13,7 +13,7 @@
                     <div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{{ $kpi['teams'] }}</div>
                 </div>
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Athletes</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Student athletes</div>
                     <div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{{ $kpi['athletes'] }}</div>
                 </div>
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">
@@ -58,7 +58,7 @@
 
             <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm overflow-hidden">
                 <div class="border-b border-gray-200/60 dark:border-white/10 px-5 py-4">
-                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">At-risk athletes</div>
+                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">At-risk student athletes</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">Medium/High risk based on BMI, activity, and drops</div>
                 </div>
                 <div class="divide-y divide-gray-200 dark:divide-white/10">
@@ -83,7 +83,7 @@
                         </div>
                     @empty
                         <div class="px-5 py-8 text-sm text-gray-600 dark:text-gray-400">
-                            No at-risk athletes yet.
+                            No at-risk student athletes yet.
                         </div>
                     @endforelse
                 </div>
@@ -91,7 +91,7 @@
 
             <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm">
                 <div class="border-b border-gray-200/60 dark:border-white/10 px-5 py-4">
-                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Teams & top-ranked athletes</div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Teams and top-ranked student athletes</div>
                 </div>
                 <div class="p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
                     @forelse($teams as $team)

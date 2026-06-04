@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminReportsController;
 use App\Http\Controllers\Admin\AdminSystemConfigController;
 use App\Http\Controllers\Admin\AdminStudentController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminAcademicController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Dashboard\CoachDashboardController;
@@ -22,8 +23,11 @@ use App\Http\Controllers\Staff\StaffAiRecommendationsHubController;
 use App\Http\Controllers\Staff\StaffInjuryLogsController;
 use App\Http\Controllers\Staff\StaffInjuryRecordsController;
 use App\Http\Controllers\Staff\StaffPerformanceScoresHubController;
+use App\Http\Controllers\Staff\StaffAcademicController;
+use App\Http\Controllers\Staff\StaffEventController;
 use App\Http\Controllers\Student\StudentParticipationLogsController;
 use App\Http\Controllers\Student\StudentSportBrowseController;
+use App\Http\Controllers\Student\StudentAcademicController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -31,10 +35,10 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', DashboardRedirectController::class)
-    ->middleware(['auth', 'org'])
+    ->middleware(['auth', 'verified', 'org'])
     ->name('dashboard');
 
-Route::middleware(['auth', 'org'])->group(function () {
+Route::middleware(['auth', 'verified', 'org'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -44,7 +48,7 @@ Route::middleware(['auth', 'org'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 });
 
-Route::middleware(['auth', 'org'])->group(function () {
+Route::middleware(['auth', 'verified', 'org'])->group(function () {
     Route::get('/admin/dashboard', AdminDashboardController::class)
         ->middleware('role:admin')
         ->name('admin.dashboard');
@@ -77,14 +81,13 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::get('/admin/reports', AdminReportsController::class)->name('admin.reports.index');
         Route::get('/admin/reports/performance-scores.csv', [AdminReportsController::class, 'export'])
             ->name('admin.reports.performance_scores_csv');
-        // System & Academic Config
-        Route::get('/admin/system', [AdminSystemConfigController::class, 'index'])->name('admin.system.index');
-        Route::post('/admin/system/courses', [AdminSystemConfigController::class, 'storeCourse'])->name('admin.system.courses.store');
-        Route::delete('/admin/system/courses/{course}', [AdminSystemConfigController::class, 'destroyCourse'])->name('admin.system.courses.destroy');
-        Route::post('/admin/system/years', [AdminSystemConfigController::class, 'storeYearLevel'])->name('admin.system.years.store');
-        Route::delete('/admin/system/years/{yearLevel}', [AdminSystemConfigController::class, 'destroyYearLevel'])->name('admin.system.years.destroy');
-        Route::post('/admin/system/sections', [AdminSystemConfigController::class, 'storeSection'])->name('admin.system.sections.store');
-        Route::delete('/admin/system/sections/{section}', [AdminSystemConfigController::class, 'destroySection'])->name('admin.system.sections.destroy');
+        Route::get('/admin/system', AdminSystemConfigController::class)->name('admin.system.index');
+
+        Route::get('/admin/academics', [AdminAcademicController::class, 'index'])->name('admin.academics.index');
+        Route::post('/admin/academics/record', [AdminAcademicController::class, 'storeRecord'])->name('admin.academics.records.store');
+        Route::post('/admin/academics/attendance', [AdminAcademicController::class, 'storeAttendance'])->name('admin.academics.attendance.store');
+        Route::post('/admin/academics/review', [AdminAcademicController::class, 'storeReview'])->name('admin.academics.reviews.store');
+        Route::get('/admin/academics/export', [AdminAcademicController::class, 'export'])->name('admin.academics.export');
     });
 
     Route::middleware('role:coach,instructor')->group(function () {
@@ -93,6 +96,15 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::post('/staff/injury-records', [StaffInjuryRecordsController::class, 'store'])->name('staff.injury_records.store');
         Route::get('/staff/performance-scores', StaffPerformanceScoresHubController::class)->name('staff.performance_scores.hub');
         Route::get('/staff/ai-recommendations', StaffAiRecommendationsHubController::class)->name('staff.ai_recommendations.hub');
+
+        Route::get('/staff/academics', [StaffAcademicController::class, 'index'])->name('staff.academics.index');
+
+        Route::get('/staff/events', [StaffEventController::class, 'index'])->name('staff.events.index');
+        Route::get('/staff/events/create', [StaffEventController::class, 'create'])->name('staff.events.create');
+        Route::post('/staff/events', [StaffEventController::class, 'store'])->name('staff.events.store');
+        Route::get('/staff/events/{event}/edit', [StaffEventController::class, 'edit'])->name('staff.events.edit');
+        Route::patch('/staff/events/{event}', [StaffEventController::class, 'update'])->name('staff.events.update');
+        Route::delete('/staff/events/{event}', [StaffEventController::class, 'destroy'])->name('staff.events.destroy');
     });
 
     Route::middleware('role:student')->group(function () {
@@ -103,6 +115,8 @@ Route::middleware(['auth', 'org'])->group(function () {
 
         Route::get('/student/participation-logs', [StudentParticipationLogsController::class, 'index'])->name('student.participation_logs.index');
         Route::post('/student/participation-logs', [StudentParticipationLogsController::class, 'store'])->name('student.participation_logs.store');
+        
+        Route::get('/student/academics', [StudentAcademicController::class, 'index'])->name('student.academics.index');
     });
 
     Route::middleware('role:admin,coach,instructor')->group(function () {
@@ -115,8 +129,6 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::delete('sports/{sport}/students/{user}', [SportStudentController::class, 'destroy'])
             ->name('sports.students.destroy');
 
-        Route::get('sports/{sport}/applications/{application}/review', [SportApplicationController::class, 'review'])
-            ->name('sports.applications.review');
         Route::post('sports/{sport}/applications/{application}/approve', [SportApplicationController::class, 'approve'])
             ->name('sports.applications.approve');
         Route::post('sports/{sport}/applications/{application}/reject', [SportApplicationController::class, 'reject'])

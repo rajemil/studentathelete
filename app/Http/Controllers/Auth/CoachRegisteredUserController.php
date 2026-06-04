@@ -6,13 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Profile;
 use App\Models\User;
+use App\Support\PersonName;
+use App\Support\RegistrationRules;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -28,24 +30,22 @@ class CoachRegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-
-            'age' => ['required', 'integer', 'min:18', 'max:90'],
-            'gender' => ['required', 'string', 'max:32'],
-            'address' => ['required', 'string', 'max:255'],
-            'field_expertise' => ['required', 'string', 'max:255'],
-            'achievements' => ['nullable', 'string', 'max:5000'],
-            'profession' => ['required', 'string', 'max:255'],
-            'coaching_experience_years' => ['required', 'integer', 'min:0', 'max:70'],
-        ]);
+        $validated = $request->validate(array_merge(
+            RegistrationRules::nameFields(),
+            [
+                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            ],
+            RegistrationRules::passwordRequired(),
+            RegistrationRules::facultyProfileFields(true),
+            [
+                'achievements' => ['nullable', 'string', 'max:5000'],
+            ],
+        ));
 
         $user = DB::transaction(function () use ($validated) {
             $user = User::create([
                 'organization_id' => Organization::defaultId(),
-                'name' => $validated['name'],
+                'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
                 'email' => $validated['email'],
                 'role' => 'coach',
                 'password' => Hash::make($validated['password']),
@@ -53,8 +53,8 @@ class CoachRegisteredUserController extends Controller
 
             Profile::create([
                 'user_id' => $user->id,
-                'age' => $validated['age'],
-                'gender' => $validated['gender'],
+                'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
+                'gender' => RegistrationRules::normalizeGender($validated['gender']),
                 'address' => $validated['address'],
                 'field_expertise' => $validated['field_expertise'],
                 'achievements' => $validated['achievements'] ?? null,
@@ -68,6 +68,6 @@ class CoachRegisteredUserController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
-        return redirect()->route('dashboard');
+        return redirect()->route('verification.notice');
     }
 }

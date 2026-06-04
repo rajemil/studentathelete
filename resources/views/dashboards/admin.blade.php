@@ -13,7 +13,7 @@
                     <div class="absolute inset-0 bg-gradient-to-br from-[#FF7A1A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div class="flex items-start justify-between">
                         <div>
-                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Students</div>
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Student athletes</div>
                             <div class="mt-2 text-4xl font-bold tracking-tight text-gray-900 dark:text-white">{{ $kpi['students'] }}</div>
                         </div>
                         <div class="h-12 w-12 rounded-2xl bg-[#FF7A1A]/10 flex items-center justify-center text-[#FF7A1A]">
@@ -106,12 +106,12 @@
                 </div>
 
                 <div class="dash-card rounded-3xl p-6 lg:col-span-2">
-                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Students by sport</div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Student athletes by sport</div>
                     <div class="mt-4 h-72">
                         <canvas
                             class="w-full"
                             data-chart="doughnut"
-                            data-chart-label="Students"
+                            data-chart-label="Student athletes"
                             data-chart-labels='@json($chart["sportsDistribution"]["labels"])'
                             data-chart-values='@json($chart["sportsDistribution"]["values"])'
                         ></canvas>
@@ -124,7 +124,7 @@
             <div class="dash-card rounded-3xl overflow-hidden">
                 <div class="border-b border-gray-200/60 dark:border-white/10 px-5 py-4">
                     <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Injury risk watchlist</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">Athletes flagged as Medium/High risk</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Student athletes flagged as medium or high injury risk</div>
                 </div>
                 <div class="divide-y divide-gray-200 dark:divide-white/10">
                     @forelse($riskyAthletes as $athlete)

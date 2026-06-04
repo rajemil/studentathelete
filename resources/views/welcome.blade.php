@@ -359,7 +359,7 @@
                             Capture → Score → Predict → Improve.
                         </h2>
                         <p class="mt-3 text-white/70">
-                            ATHLETEAI turns PE scoring and athlete stats into forecasts, risk signals, and weekly training plans—so coaches and students always know what to do next.
+                            SAIMS turns PE scoring and student athlete stats into predictive analytics, risk signals, and data-driven training recommendations—so coaches and student athletes always know what to do next.
                         </p>
                     </div>
                     <div class="lg:col-span-7">

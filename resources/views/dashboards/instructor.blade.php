@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Instructor Dashboard</h2>
-            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Assigned groups, student performance, and health signals.</div>
+            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Assigned groups, student athlete performance analytics, and health signals.</div>
         </div>
     </x-slot>
 
@@ -13,7 +13,7 @@
                     <div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{{ $kpi['teams'] }}</div>
                 </div>
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Students</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Student athletes</div>
                     <div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{{ $kpi['athletes'] }}</div>
                 </div>
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">

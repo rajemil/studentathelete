@@ -7,6 +7,7 @@ use App\Models\PlayerStat;
 use App\Models\Profile;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 class InjuryRiskService
 {
@@ -22,6 +23,7 @@ class InjuryRiskService
             ->with('profile')
             ->get();
 
+        $results = $this->computeForUsers($students, $now);
         $updated = 0;
 
         foreach ($students as $student) {
@@ -29,7 +31,7 @@ class InjuryRiskService
                 continue;
             }
 
-            $result = $this->computeForUser($student, $now);
+            $result = $results[(int) $student->id] ?? $this->computeForUser($student, $now);
             $student->profile->update([
                 'fatigue_score' => $result['fatigue_score'],
                 'injury_risk' => $result['injury_risk'],
@@ -38,6 +40,85 @@ class InjuryRiskService
         }
 
         return $updated;
+    }
+
+    /**
+     * Bulk fatigue/risk for many athletes (single query batch per metric).
+     *
+     * @param  Collection<int, User>  $athletes
+     * @return array<int, array{fatigue_score: int, injury_risk: string, inputs?: array}>
+     */
+    public function computeForUsers(Collection $athletes, ?CarbonImmutable $now = null): array
+    {
+        $now ??= CarbonImmutable::now();
+
+        if ($athletes->isEmpty()) {
+            return [];
+        }
+
+        $userIds = $athletes->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $since14 = $now->subDays(14)->toDateString();
+        $w1Start = $now->subDays(7)->toDateString();
+        $w0Start = $now->subDays(14)->toDateString();
+        $w0End = CarbonImmutable::parse($w1Start)->subDay()->toDateString();
+
+        $scoreCounts14 = PerformanceScore::query()
+            ->whereIn('user_id', $userIds)
+            ->whereNotNull('scored_on')
+            ->where('scored_on', '>=', $since14)
+            ->selectRaw('user_id, COUNT(*) as aggregate')
+            ->groupBy('user_id')
+            ->pluck('aggregate', 'user_id');
+
+        $statCounts14 = PlayerStat::query()
+            ->whereIn('user_id', $userIds)
+            ->whereNotNull('recorded_on')
+            ->where('recorded_on', '>=', $since14)
+            ->selectRaw('user_id, COUNT(*) as aggregate')
+            ->groupBy('user_id')
+            ->pluck('aggregate', 'user_id');
+
+        $avgW1 = PerformanceScore::query()
+            ->whereIn('user_id', $userIds)
+            ->whereNotNull('scored_on')
+            ->where('scored_on', '>=', $w1Start)
+            ->selectRaw('user_id, AVG(score) as avg_score')
+            ->groupBy('user_id')
+            ->pluck('avg_score', 'user_id');
+
+        $avgW0 = PerformanceScore::query()
+            ->whereIn('user_id', $userIds)
+            ->whereNotNull('scored_on')
+            ->whereBetween('scored_on', [$w0Start, $w0End])
+            ->selectRaw('user_id, AVG(score) as avg_score')
+            ->groupBy('user_id')
+            ->pluck('avg_score', 'user_id');
+
+        $profiles = Profile::query()
+            ->whereIn('user_id', $userIds)
+            ->get(['user_id', 'height_cm', 'weight_kg'])
+            ->keyBy('user_id');
+
+        $out = [];
+
+        foreach ($athletes as $athlete) {
+            $uid = (int) $athlete->id;
+            $profile = $profiles->get($uid);
+            $bmi = $profile?->bmi !== null ? (float) $profile->bmi : null;
+
+            $activityCount14 = (int) ($scoreCounts14[$uid] ?? 0) + (int) ($statCounts14[$uid] ?? 0);
+            $avgLast = (float) ($avgW1[$uid] ?? 0);
+            $avgPrev = (float) ($avgW0[$uid] ?? 0);
+
+            $dropPct = 0.0;
+            if ($avgPrev > 0) {
+                $dropPct = (($avgLast - $avgPrev) / $avgPrev) * 100.0;
+            }
+
+            $out[$uid] = $this->scoreFromInputs($bmi, $activityCount14, $avgLast, $avgPrev, $dropPct);
+        }
+
+        return $out;
     }
 
     /**
@@ -54,47 +135,20 @@ class InjuryRiskService
 
         /** @var Profile|null $profile */
         $profile = $athlete->profile;
-        $bmi = $profile?->bmi !== null ? (float) $profile->bmi : null;
+        $bulk = $this->computeForUsers(collect([$athlete]), $now);
 
-        // Activity: events in last 14 days via scores + player_stats records
-        $since14 = $now->subDays(14)->toDateString();
-        $scoreCount14 = (int) PerformanceScore::query()
-            ->where('user_id', $athlete->id)
-            ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $since14)
-            ->count();
+        return $bulk[(int) $athlete->id] ?? [
+            'fatigue_score' => 0,
+            'injury_risk' => 'low',
+            'inputs' => [],
+        ];
+    }
 
-        $statCount14 = (int) PlayerStat::query()
-            ->where('user_id', $athlete->id)
-            ->whereNotNull('recorded_on')
-            ->where('recorded_on', '>=', $since14)
-            ->count();
-
-        $activityCount14 = $scoreCount14 + $statCount14;
-
-        // Performance drop: compare last 7 days vs previous 7 days (overall scores)
-        $w1Start = $now->subDays(7)->toDateString();
-        $w0Start = $now->subDays(14)->toDateString();
-
-        $avgW1 = (float) (PerformanceScore::query()
-            ->where('user_id', $athlete->id)
-            ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $w1Start)
-            ->avg('score') ?: 0);
-
-        $avgW0 = (float) (PerformanceScore::query()
-            ->where('user_id', $athlete->id)
-            ->whereNotNull('scored_on')
-            ->whereBetween('scored_on', [$w0Start, CarbonImmutable::parse($w1Start)->subDay()->toDateString()])
-            ->avg('score') ?: 0);
-
-        $dropPct = 0.0;
-        if ($avgW0 > 0) {
-            $dropPct = (($avgW1 - $avgW0) / $avgW0) * 100.0; // negative means drop
-        }
-
-        // --- scoring ---
-        // BMI component: penalize underweight/overweight/obese (soft)
+    /**
+     * @return array{fatigue_score: int, injury_risk: string, inputs: array<string, mixed>}
+     */
+    private function scoreFromInputs(?float $bmi, int $activityCount14, float $avgW1, float $avgW0, float $dropPct): array
+    {
         $bmiRisk = 0.0;
         if ($bmi !== null) {
             if ($bmi < 18.5) {
@@ -107,42 +161,26 @@ class InjuryRiskService
                 $bmiRisk = 24;
             }
         } else {
-            $bmiRisk = 8; // unknown BMI
+            $bmiRisk = 8;
         }
 
-        // Activity component: too much load increases fatigue; too little reduces confidence.
-        // Target zone: 4–10 activity signals per 14 days.
-        $activityRisk = 0.0;
-        if ($activityCount14 <= 1) {
-            $activityRisk = 10;
-        } elseif ($activityCount14 <= 3) {
-            $activityRisk = 6;
-        } elseif ($activityCount14 <= 10) {
-            $activityRisk = 10;
-        } elseif ($activityCount14 <= 16) {
-            $activityRisk = 20;
-        } else {
-            $activityRisk = 28;
-        }
+        $activityRisk = match (true) {
+            $activityCount14 <= 1 => 10.0,
+            $activityCount14 <= 3 => 6.0,
+            $activityCount14 <= 10 => 10.0,
+            $activityCount14 <= 16 => 20.0,
+            default => 28.0,
+        };
 
-        // Performance drop component: drop >=15% is meaningful
-        $dropRisk = 0.0;
-        if ($avgW0 === 0.0 && $avgW1 === 0.0) {
-            $dropRisk = 6; // no data
-        } elseif ($dropPct <= -25.0) {
-            $dropRisk = 40;
-        } elseif ($dropPct <= -15.0) {
-            $dropRisk = 28;
-        } elseif ($dropPct <= -8.0) {
-            $dropRisk = 18;
-        } else {
-            $dropRisk = 6;
-        }
+        $dropRisk = match (true) {
+            $avgW0 === 0.0 && $avgW1 === 0.0 => 6.0,
+            $dropPct <= -25.0 => 40.0,
+            $dropPct <= -15.0 => 28.0,
+            $dropPct <= -8.0 => 18.0,
+            default => 6.0,
+        };
 
-        // Fatigue score (0-100)
-        $fatigue = $bmiRisk + $activityRisk + $dropRisk;
-        $fatigue = (int) round(max(0, min(100, $fatigue)));
-
+        $fatigue = (int) round(max(0, min(100, $bmiRisk + $activityRisk + $dropRisk)));
         $risk = $fatigue >= 70 ? 'high' : ($fatigue >= 40 ? 'medium' : 'low');
 
         return [

@@ -14,7 +14,7 @@
             <div
                 class="h-10 w-10 shrink-0 rounded-2xl bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white flex items-center justify-center shadow-sm ring-1 ring-black/5 dark:ring-white/10 relative group overflow-hidden"
                 role="img"
-                aria-label="{{ config('app.name', 'Student Athlete AI') }} logo"
+                aria-label="{{ config('app.name', 'SAIMS') }} logo"
             >
                 <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                 {{-- Mark: trajectory + rising metrics (sport performance + analytics) --}}
@@ -33,7 +33,7 @@
                 </svg>
             </div>
             <div class="leading-tight">
-                <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">STUDENT ATHLETE AI MS</div>
+                <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">SAIMS</div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">Sports Analytics</div>
             </div>
         </div>
@@ -153,7 +153,7 @@
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                         </span>
-                        AI recommendations
+                        Predictive recommendations
                     </a>
                 @endif
 
@@ -226,7 +226,7 @@
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                         </span>
-                        AI recommendations
+                        Predictive recommendations
                     </a>
                 @endif
 

@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Analytics</h2>
-            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Predictions, win probability, and lineup suggestions.</div>
+            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Performance analytics, win probability, and data-driven lineup suggestions.</div>
         </div>
     </x-slot>
 
@@ -10,11 +10,11 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8" id="analytics-root">
             <div data-analytics="toast" hidden></div>
             <div class="rounded-xl bg-white dark:bg-gray-800 shadow p-6">
-                <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Athlete performance prediction</div>
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Student athlete performance analytics</div>
 
                 <form class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end" data-analytics="athlete-form">
                     <div>
-                        <x-input-label for="athlete_user_id" value="Athlete (student)" />
+                        <x-input-label for="athlete_user_id" value="Student athlete" />
                         <select id="athlete_user_id" name="user_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required>
                             <option value="">Select...</option>
                             @foreach($students as $s)
@@ -39,7 +39,7 @@
                     </div>
 
                     <div class="flex md:justify-end gap-2">
-                        <x-primary-button type="submit">Predict</x-primary-button>
+                        <x-primary-button type="submit">Analyze</x-primary-button>
                         <button type="button" class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700" data-analytics="recommend-btn">
                             Recommendations
                         </button>

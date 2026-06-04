@@ -95,14 +95,14 @@ class DatabaseSeeder extends Seeder
             ]);
 
             foreach ($students as $s) {
+                $yearsAgo = $faker->numberBetween(15, 22);
                 Profile::query()->create([
                     'user_id' => $s->id,
-                    'age' => $faker->numberBetween(15, 22),
+                    'birthdate' => Carbon::now()->subYears($yearsAgo)->subDays($faker->numberBetween(0, 365))->toDateString(),
                     'gender' => $faker->randomElement(['male', 'female', 'other']),
                     'address' => $faker->city().', '.$faker->stateAbbr(),
                     'height_cm' => $faker->randomFloat(2, 150, 205),
                     'weight_kg' => $faker->randomFloat(2, 45, 110),
-                    'bmi' => null,
                     'fatigue_score' => $faker->numberBetween(10, 80),
                     'injury_risk' => $faker->randomElement(['low', 'medium', 'high']),
                     'sports_interested' => [],
@@ -110,9 +110,10 @@ class DatabaseSeeder extends Seeder
             }
 
             foreach ($coaches as $c) {
+                $yearsAgo = $faker->numberBetween(23, 60);
                 Profile::query()->create([
                     'user_id' => $c->id,
-                    'age' => $faker->numberBetween(23, 60),
+                    'birthdate' => Carbon::now()->subYears($yearsAgo)->subDays($faker->numberBetween(0, 365))->toDateString(),
                     'gender' => $faker->randomElement(['male', 'female', 'other']),
                     'address' => $faker->city().', '.$faker->stateAbbr(),
                     'field_expertise' => $faker->randomElement(['Strength & Conditioning', 'Tactics', 'Skills', 'Performance']),

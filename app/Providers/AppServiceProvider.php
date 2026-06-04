@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\InjuryRecord;
+use App\Models\ParticipationLog;
+use App\Models\PerformanceScore;
+use App\Observers\AnalyticsCacheObserver;
 use App\Services\AI\AiManager;
 use App\Services\AI\Contracts\AiClient;
 use Illuminate\Support\Facades\Vite;
@@ -24,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+<<<<<<< Updated upstream
         view()->composer(['layouts.sidebar', 'layouts.topbar', 'layouts.nav-mobile-links'], function ($view) {
             if (auth()->check() && in_array(auth()->user()->role, ['admin', 'coach', 'instructor'])) {
                 $user = auth()->user();
@@ -41,5 +46,11 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('pendingApplicationsCount', $count);
             }
         });
+=======
+        $observer = AnalyticsCacheObserver::class;
+        PerformanceScore::observe($observer);
+        InjuryRecord::observe($observer);
+        ParticipationLog::observe($observer);
+>>>>>>> Stashed changes
     }
 }

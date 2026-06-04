@@ -7,6 +7,7 @@ use App\Models\Insight;
 use App\Models\PerformanceScore;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsCache;
 use App\Services\Insights\InsightsService;
 use App\Support\CoachedTeams;
 use Carbon\CarbonImmutable;
@@ -19,6 +20,18 @@ trait BuildsCoachStyleDashboard
      * @return array{kpi: array, teams: Collection, recentEvents: Collection, chart: array, insights: Collection, riskyAthletes: Collection}
      */
     protected function coachStyleDashboardPayload(User $user, InsightsService $insightsService): array
+    {
+        return AnalyticsCache::remember(
+            AnalyticsCache::dashboardPayloadKey((int) $user->id),
+            fn () => $this->buildCoachStyleDashboardPayload($user, $insightsService),
+            300,
+        );
+    }
+
+    /**
+     * @return array{kpi: array, teams: Collection, recentEvents: Collection, chart: array, insights: Collection, riskyAthletes: Collection}
+     */
+    private function buildCoachStyleDashboardPayload(User $user, InsightsService $insightsService): array
     {
         $now = CarbonImmutable::now();
 

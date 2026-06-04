@@ -17,7 +17,6 @@ class StudentWelcomeMail extends Mailable implements ShouldQueue
 
     public function __construct(
         public User $user,
-        public string $plainAccessCode,
     ) {}
 
     public function envelope(): Envelope

@@ -2,11 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\AcademicRecord;
+use App\Models\Event;
 use App\Models\InjuryRecord;
 use App\Models\ParticipationLog;
 use App\Models\Sport;
 use App\Models\Team;
 use App\Models\User;
+use App\Policies\AcademicPolicy;
+use App\Policies\EventPolicy;
 use App\Policies\InjuryRecordPolicy;
 use App\Policies\ParticipationLogPolicy;
 use App\Policies\SportPolicy;
@@ -20,6 +24,8 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
+        AcademicRecord::class => AcademicPolicy::class,
+        Event::class => EventPolicy::class,
         InjuryRecord::class => InjuryRecordPolicy::class,
         ParticipationLog::class => ParticipationLogPolicy::class,
         Sport::class => SportPolicy::class,

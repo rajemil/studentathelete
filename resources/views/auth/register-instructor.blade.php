@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register.instructor') }}">
+    <form method="POST" action="{{ route('register.instructor') }}" x-data="{ birthdate: '{{ old('birthdate', '') }}', calcAge() { if (!this.birthdate) return ''; const d = new Date(this.birthdate); if (String(d) === 'Invalid Date') return ''; const now = new Date(); let age = now.getFullYear() - d.getFullYear(); const m = now.getMonth() - d.getMonth(); if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--; return age < 0 ? '' : age; } }">
         @csrf
 
         <div class="mb-5">
@@ -8,11 +8,7 @@
         </div>
 
         <div class="space-y-4">
-            <div>
-                <x-input-label for="name" value="Full Name" />
-                <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
-                <x-input-error :messages="$errors->get('name')" class="mt-2" />
-            </div>
+            @include('partials.person-name-fields')
 
             <div>
                 <x-input-label for="email" value="Email" />
@@ -20,54 +16,12 @@
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <x-input-label for="age" value="Age" />
-                    <x-text-input id="age" class="block mt-1 w-full" type="number" name="age" min="18" max="90" :value="old('age')" required />
-                    <x-input-error :messages="$errors->get('age')" class="mt-2" />
-                </div>
-                <div>
-                    <x-input-label for="gender" value="Gender" />
-                    <select id="gender" name="gender" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
-                        <option value="">Select...</option>
-                        @foreach(['Male','Female','Non-binary','Prefer not to say'] as $g)
-                            <option value="{{ $g }}" @selected(old('gender')===$g)>{{ $g }}</option>
-                        @endforeach
-                    </select>
-                    <x-input-error :messages="$errors->get('gender')" class="mt-2" />
-                </div>
-            </div>
+            @include('partials.faculty-profile-fields')
 
             <div>
-                <x-input-label for="address" value="Address" />
-                <x-text-input id="address" class="block mt-1 w-full" type="text" name="address" :value="old('address')" required />
-                <x-input-error :messages="$errors->get('address')" class="mt-2" />
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <x-input-label for="field_expertise" value="Subject / sport focus" />
-                    <x-text-input id="field_expertise" class="block mt-1 w-full" type="text" name="field_expertise" :value="old('field_expertise')" required />
-                    <x-input-error :messages="$errors->get('field_expertise')" class="mt-2" />
-                </div>
-                <div>
-                    <x-input-label for="profession" value="Role / specialization" />
-                    <x-text-input id="profession" class="block mt-1 w-full" type="text" name="profession" :value="old('profession')" required />
-                    <x-input-error :messages="$errors->get('profession')" class="mt-2" />
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <x-input-label for="coaching_experience_years" value="Instruction experience (years)" />
-                    <x-text-input id="coaching_experience_years" class="block mt-1 w-full" type="number" name="coaching_experience_years" min="0" max="70" :value="old('coaching_experience_years')" required />
-                    <x-input-error :messages="$errors->get('coaching_experience_years')" class="mt-2" />
-                </div>
-                <div>
-                    <x-input-label for="achievements" value="Qualifications (optional)" />
-                    <textarea id="achievements" name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-white/35 transition">{{ old('achievements') }}</textarea>
-                    <x-input-error :messages="$errors->get('achievements')" class="mt-2" />
-                </div>
+                <x-input-label for="achievements" value="Qualifications" />
+                <textarea id="achievements" name="achievements" rows="3" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition">{{ old('achievements') }}</textarea>
+                <x-input-error :messages="$errors->get('achievements')" class="mt-2" />
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -13,12 +13,17 @@ use Illuminate\Support\Facades\DB;
 
 class InsightsService
 {
-    public function ensureGenerated(?CarbonImmutable $now = null): int
+    public function ensureGenerated(?CarbonImmutable $now = null, ?int $organizationId = null): int
     {
         $now ??= CarbonImmutable::now();
 
-        if (! Insight::query()->exists()) {
-            return $this->generate($now);
+        $query = Insight::query();
+        if ($organizationId !== null) {
+            $query->where('organization_id', $organizationId);
+        }
+
+        if (! $query->exists()) {
+            return $this->generate($now, $organizationId);
         }
 
         return 0;
@@ -28,15 +33,15 @@ class InsightsService
      * Generate and persist a fresh batch of insights.
      * Safe to run repeatedly (uses hash_key upsert).
      */
-    public function generate(?CarbonImmutable $now = null): int
+    public function generate(?CarbonImmutable $now = null, ?int $organizationId = null): int
     {
         $now ??= CarbonImmutable::now();
 
         $insights = collect()
-            ->merge($this->insightsPerformanceImproved($now))
-            ->merge($this->insightsStaminaDecreasing($now))
-            ->merge($this->insightsTopPerformersThisWeek($now))
-            ->merge($this->insightsAtRiskAthletes($now));
+            ->merge($this->insightsPerformanceImproved($now, $organizationId))
+            ->merge($this->insightsStaminaDecreasing($now, $organizationId))
+            ->merge($this->insightsTopPerformersThisWeek($now, $organizationId))
+            ->merge($this->insightsAtRiskAthletes($now, $organizationId));
 
         if ($insights->isEmpty()) {
             return 0;
@@ -80,7 +85,7 @@ class InsightsService
                 'team_id' => null,
                 'type' => 'narrative_summary',
                 'severity' => 'info',
-                'title' => 'AI summary',
+                'title' => 'Performance analytics summary',
                 'message' => $actionable,
                 'payload' => $this->normalizeJsonPayload($payload),
                 'computed_at' => $now,
@@ -95,16 +100,23 @@ class InsightsService
     /**
      * "Performance improved by X%" (week-over-week, per student per sport).
      */
-    private function insightsPerformanceImproved(CarbonImmutable $now): Collection
+    private function insightsPerformanceImproved(CarbonImmutable $now, ?int $organizationId = null): Collection
     {
         $weekEnd = $now->startOfDay();
         $w1Start = $weekEnd->subDays(7);
         $w0Start = $weekEnd->subDays(14);
 
-        $rows = PerformanceScore::query()
+        $query = PerformanceScore::query()
             ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $w0Start->toDateString())
-            ->select(
+            ->where('scored_on', '>=', $w0Start->toDateString());
+
+        if ($organizationId !== null) {
+            $query->whereIn('user_id', function ($q) use ($organizationId) {
+                $q->select('id')->from('users')->where('organization_id', $organizationId);
+            });
+        }
+
+        $rows = $query->select(
                 'user_id',
                 'sport_id',
                 DB::raw("avg(case when scored_on >= '{$w1Start->toDateString()}' then score end) as avg_w1"),
@@ -159,15 +171,22 @@ class InsightsService
      * - performance_scores category=stamina trend, OR
      * - player_stats.metrics->stamina trend.
      */
-    private function insightsStaminaDecreasing(CarbonImmutable $now): Collection
+    private function insightsStaminaDecreasing(CarbonImmutable $now, ?int $organizationId = null): Collection
     {
         $since = $now->subDays(21)->toDateString();
 
-        $scoreStamina = PerformanceScore::query()
+        $queryScores = PerformanceScore::query()
             ->where('category', 'stamina')
             ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $since)
-            ->orderBy('scored_on')
+            ->where('scored_on', '>=', $since);
+
+        if ($organizationId !== null) {
+            $queryScores->whereIn('user_id', function ($q) use ($organizationId) {
+                $q->select('id')->from('users')->where('organization_id', $organizationId);
+            });
+        }
+
+        $scoreStamina = $queryScores->orderBy('scored_on')
             ->get(['user_id', 'sport_id', 'scored_on', 'score'])
             ->groupBy(fn ($r) => $r->user_id.'|'.($r->sport_id ?? 0));
 
@@ -211,10 +230,17 @@ class InsightsService
         }
 
         // player_stats.metrics stamina (optional)
-        $statRows = PlayerStat::query()
+        $queryStats = PlayerStat::query()
             ->where('recorded_on', '>=', $since)
-            ->whereNotNull('metrics')
-            ->orderBy('recorded_on')
+            ->whereNotNull('metrics');
+
+        if ($organizationId !== null) {
+            $queryStats->whereIn('user_id', function ($q) use ($organizationId) {
+                $q->select('id')->from('users')->where('organization_id', $organizationId);
+            });
+        }
+
+        $statRows = $queryStats->orderBy('recorded_on')
             ->get(['user_id', 'sport_id', 'recorded_on', 'metrics'])
             ->filter(fn ($r) => is_array($r->metrics) && array_key_exists('stamina', $r->metrics))
             ->groupBy(fn ($r) => $r->user_id.'|'.($r->sport_id ?? 0));
@@ -262,14 +288,21 @@ class InsightsService
     /**
      * "Top performer this week" per sport and overall.
      */
-    private function insightsTopPerformersThisWeek(CarbonImmutable $now): Collection
+    private function insightsTopPerformersThisWeek(CarbonImmutable $now, ?int $organizationId = null): Collection
     {
         $since = $now->subDays(7)->toDateString();
 
-        $topBySport = PerformanceScore::query()
+        $queryBySport = PerformanceScore::query()
             ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $since)
-            ->select('sport_id', 'user_id', DB::raw('avg(score) as avg_score'), DB::raw('count(*) as n'))
+            ->where('scored_on', '>=', $since);
+
+        if ($organizationId !== null) {
+            $queryBySport->whereIn('user_id', function ($q) use ($organizationId) {
+                $q->select('id')->from('users')->where('organization_id', $organizationId);
+            });
+        }
+
+        $topBySport = $queryBySport->select('sport_id', 'user_id', DB::raw('avg(score) as avg_score'), DB::raw('count(*) as n'))
             ->groupBy('sport_id', 'user_id')
             ->having(DB::raw('count(*)'), '>=', 2)
             ->get()
@@ -305,10 +338,17 @@ class InsightsService
         }
 
         // Overall top performer
-        $overall = PerformanceScore::query()
+        $queryOverall = PerformanceScore::query()
             ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $since)
-            ->select('user_id', DB::raw('avg(score) as avg_score'), DB::raw('count(*) as n'))
+            ->where('scored_on', '>=', $since);
+
+        if ($organizationId !== null) {
+            $queryOverall->whereIn('user_id', function ($q) use ($organizationId) {
+                $q->select('id')->from('users')->where('organization_id', $organizationId);
+            });
+        }
+
+        $overall = $queryOverall->select('user_id', DB::raw('avg(score) as avg_score'), DB::raw('count(*) as n'))
             ->groupBy('user_id')
             ->having(DB::raw('count(*)'), '>=', 3)
             ->orderByDesc('avg_score')
@@ -343,16 +383,23 @@ class InsightsService
      * - Recent week avg drops by >= 15% vs previous week AND
      * - volatility is high OR recent 3 scores are strictly decreasing.
      */
-    private function insightsAtRiskAthletes(CarbonImmutable $now): Collection
+    private function insightsAtRiskAthletes(CarbonImmutable $now, ?int $organizationId = null): Collection
     {
         $weekEnd = $now->startOfDay();
         $w1Start = $weekEnd->subDays(7);
         $w0Start = $weekEnd->subDays(14);
 
-        $agg = PerformanceScore::query()
+        $query = PerformanceScore::query()
             ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $w0Start->toDateString())
-            ->select(
+            ->where('scored_on', '>=', $w0Start->toDateString());
+
+        if ($organizationId !== null) {
+            $query->whereIn('user_id', function ($q) use ($organizationId) {
+                $q->select('id')->from('users')->where('organization_id', $organizationId);
+            });
+        }
+
+        $agg = $query->select(
                 'user_id',
                 'sport_id',
                 DB::raw("avg(case when scored_on >= '{$w1Start->toDateString()}' then score end) as avg_w1"),

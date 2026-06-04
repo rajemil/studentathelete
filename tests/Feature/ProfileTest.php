@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -23,12 +24,13 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => 'test@example.com',
             ]);
 
@@ -45,12 +47,13 @@ class ProfileTest extends TestCase
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => $user->email,
             ]);
 
@@ -59,6 +62,38 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_student_can_update_profile_with_athlete_fields(): void
+    {
+        $user = User::factory()->create(['role' => 'student']);
+        Profile::query()->create([
+            'user_id' => $user->id,
+            'birthdate' => '2000-01-01',
+            'gender' => 'male',
+            'address' => 'Old Address',
+            'course' => 'Old Course',
+            'height_cm' => 170,
+            'weight_kg' => 65,
+        ]);
+
+        $response = $this->actingAs($user)->patch('/profile', [
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'email' => $user->email,
+            'birthdate' => '2001-02-02',
+            'gender' => 'female',
+            'address' => 'New Address',
+            'course' => 'BS Athletics',
+            'height_cm' => 172,
+            'weight_kg' => 68,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $user->refresh();
+        $this->assertSame('Jane Doe', $user->name);
+        $this->assertSame('BS Athletics', $user->profile->course);
     }
 
     public function test_user_can_delete_their_account(): void
