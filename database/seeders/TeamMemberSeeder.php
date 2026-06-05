@@ -13,7 +13,8 @@ class TeamMemberSeeder extends Seeder
     public function run(): void
     {
         $organization = Organization::first();
-        if (!$organization) return;
+        if (!$organization)
+            return;
 
         $members = [
             [
@@ -23,12 +24,12 @@ class TeamMemberSeeder extends Seeder
             ],
             [
                 'name' => 'Kurt Brian Tacdoro',
-                'role' => 'Documentator',
+                'role' => 'Documentator, Presenter',
                 'description' => 'The rankings and win probability changed how we prepare for meets.',
             ],
             [
                 'name' => 'Ray Valentine Y. Agoncillo',
-                'role' => 'Presenter, Documentator',
+                'role' => 'Programmer, Documentator',
                 'description' => 'Clean UI, fast workflows, and the analytics are easy to trust.',
             ],
         ];
