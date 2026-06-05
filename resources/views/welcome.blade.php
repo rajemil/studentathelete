@@ -554,7 +554,7 @@
                             <div class="h-9 w-9 rounded-xl glass flex items-center justify-center">S</div>
                             <div class="text-sm font-semibold">SAIMS</div>
                         </div>
-                        <p class="mt-4 text-sm text-white/60 max-w-sm">
+                        <p class="mt-4 text-sm text-white/60 max-w-sm" x-text="footer.about_us || 'Student Athlete Information Management System with enterprise-grade analytics and modern UI.'">
                             Student Athlete Information Management System with enterprise-grade analytics and modern UI.
                         </p>
                         <div class="mt-6 text-xs text-white/40">© {{ date('Y') }} SAIMS. All rights reserved.</div>
