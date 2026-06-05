@@ -405,17 +405,17 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-lg shadow-lg">
                                     <div class="text-xs text-white/60">Students</div>
-                                    <div class="mt-2 text-3xl font-semibold">1,248</div>
-                                    <div class="mt-1 text-xs text-white/60">Across 12 sports</div>
+                                    <div class="mt-2 text-3xl font-semibold" x-text="stats.students !== undefined ? stats.students : '1,248'">1,248</div>
+                                    <div class="mt-1 text-xs text-white/60" x-text="stats.sports !== undefined ? 'Across ' + stats.sports + ' sports' : 'Across 12 sports'">Across 12 sports</div>
                                 </div>
                                 <div class="rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-lg shadow-lg">
                                     <div class="text-xs text-white/60">Upcoming events</div>
-                                    <div class="mt-2 text-3xl font-semibold">18</div>
+                                    <div class="mt-2 text-3xl font-semibold" x-text="stats.events !== undefined ? stats.events : '18'">18</div>
                                     <div class="mt-1 text-xs text-white/60">Next 30 days</div>
                                 </div>
                                 <div class="rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-lg shadow-lg">
                                     <div class="text-xs text-white/60">Avg score</div>
-                                    <div class="mt-2 text-3xl font-semibold">82.7</div>
+                                    <div class="mt-2 text-3xl font-semibold" x-text="stats.avgScore !== undefined ? stats.avgScore : '82.7'">82.7</div>
                                     <div class="mt-1 text-xs text-emerald-300">Trending up</div>
                                 </div>
                             </div>
