@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\PredictionController;
 use App\Http\Controllers\Api\PredictiveAnalyticsController;
+use App\Http\Controllers\Api\LandingDataController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'org'])->group(function () {
@@ -19,3 +20,5 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::post('predictions/teams/strongest-lineup', [PredictionController::class, 'strongestLineup']);
     });
 });
+
+Route::get('/dashboard/landing-data', [LandingDataController::class, 'index'])->name('api.landing.data');

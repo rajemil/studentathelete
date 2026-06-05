@@ -7,7 +7,7 @@
         <title>{{ config('app.name', 'SAIMS') }} — Sports Analytics Platform</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-future antialiased" data-landing>
+    <body class="min-h-screen bg-future antialiased" data-landing x-data="landingData(@js($initialData))">
         <!-- Background system -->
         <div class="pointer-events-none fixed inset-0 z-0 glow-spots"></div>
         <div class="pointer-events-none fixed inset-0 z-0 stars-overlay"></div>
@@ -156,7 +156,7 @@
                                     <div>
                                         <div class="text-[11px] tracking-[0.18em] text-white/60">SCORE</div>
                                         <div class="mt-2 flex items-end gap-2">
-                                            <div class="text-3xl font-semibold">85</div>
+                                            <div class="text-3xl font-semibold" x-text="stats.avgScore !== undefined ? stats.avgScore : 85">85</div>
                                             <div class="pb-1 text-sm text-white/60">/ 100</div>
                                         </div>
                                     </div>
@@ -592,6 +592,38 @@
             </div>
         </footer>
         </div>
+        <script>
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('landingData', (initialData) => ({
+                    stats: initialData.stats || {},
+                    activities: initialData.activities || [],
+                    events: initialData.events || [],
+                    teamMembers: initialData.teamMembers || [],
+                    insights: initialData.insights || {},
+                    footer: initialData.footer || {},
+                    init() {
+                        setInterval(() => this.fetchUpdate(), 45000);
+                    },
+                    async fetchUpdate() {
+                        try {
+                            const res = await fetch('/api/dashboard/landing-data', {
+                                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            this.stats = data.stats;
+                            this.activities = data.activities;
+                            this.events = data.events;
+                            this.teamMembers = data.teamMembers;
+                            this.insights = data.insights;
+                            this.footer = data.footer;
+                        } catch (e) {
+                            console.error('Failed to fetch landing data:', e);
+                        }
+                    }
+                }));
+            });
+        </script>
     </body>
 </html>
 

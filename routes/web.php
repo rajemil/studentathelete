@@ -30,9 +30,9 @@ use App\Http\Controllers\Student\StudentSportBrowseController;
 use App\Http\Controllers\Student\StudentAcademicController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+use App\Http\Controllers\LandingPageController;
+
+Route::get('/', [LandingPageController::class, 'index'])->name('home');
 
 Route::get('/dashboard', DashboardRedirectController::class)
     ->middleware(['auth', 'org'])
