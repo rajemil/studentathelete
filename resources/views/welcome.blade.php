@@ -448,29 +448,29 @@
             <div class="mx-auto max-w-7xl px-6 py-24">
                 <div class="flex items-end justify-between gap-6" data-reveal>
                     <div class="max-w-2xl">
-                        <div class="text-sm text-indigo-200/90">Trusted by programs</div>
-                        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">Teams move faster with clear insight</h2>
-                        <p class="mt-4 text-white/70">A modern system that replaces spreadsheets and scattered notes with a single source of truth.</p>
+                        <div class="text-sm text-indigo-200/90">Our Creators</div>
+                        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">Meet the Team</h2>
+                        <p class="mt-4 text-white/70">The dedicated individuals who built SAIMS.</p>
                     </div>
                 </div>
 
                 <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    @foreach([
-                        ['quote' => 'We cut planning time in half and improved lineup decisions immediately.', 'name' => 'Head Coach', 'org' => 'University Athletics'],
-                        ['quote' => 'The rankings and win probability changed how we prepare for meets.', 'name' => 'PE Instructor', 'org' => 'Public School District'],
-                        ['quote' => 'Clean UI, fast workflows, and the analytics are easy to trust.', 'name' => 'Athletic Director', 'org' => 'Private Academy'],
-                    ] as $t)
+                    <template x-for="member in (teamMembers && teamMembers.length ? teamMembers : [
+                        {description: 'We cut planning time in half and improved lineup decisions immediately.', name: 'Head Coach', role: 'University Athletics'},
+                        {description: 'The rankings and win probability changed how we prepare for meets.', name: 'PE Instructor', role: 'Public School District'},
+                        {description: 'Clean UI, fast workflows, and the analytics are easy to trust.', name: 'Athletic Director', role: 'Private Academy'}
+                    ])">
                         <x-ui.card class="p-6" data-reveal>
-                            <div class="text-sm text-white/80">“{{ $t['quote'] }}”</div>
+                            <div class="text-sm text-white/80" x-text="'“' + member.description + '”'"></div>
                             <div class="mt-5 flex items-center gap-3">
-                                <div class="h-10 w-10 rounded-2xl bg-white/10"></div>
+                                <div class="h-10 w-10 rounded-2xl bg-white/10 bg-cover bg-center" :style="member.image_path ? 'background-image: url(' + member.image_path + ')' : ''"></div>
                                 <div>
-                                    <div class="text-sm font-semibold">{{ $t['name'] }}</div>
-                                    <div class="text-xs text-white/60">{{ $t['org'] }}</div>
+                                    <div class="text-sm font-semibold" x-text="member.name"></div>
+                                    <div class="text-xs text-white/60" x-text="member.role"></div>
                                 </div>
                             </div>
                         </x-ui.card>
-                    @endforeach
+                    </template>
                 </div>
             </div>
         </section>
