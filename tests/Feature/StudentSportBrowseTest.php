@@ -7,6 +7,7 @@ use App\Models\Sport;
 use App\Models\User;
 use App\Notifications\SportApplicationSubmitted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -25,10 +26,10 @@ class StudentSportBrowseTest extends TestCase
             'description' => null,
         ]);
 
-        $instructor = User::factory()->create(['role' => 'instructor', 'organization_id' => $orgId]);
-        $sport->update(['instructor_user_id' => $instructor->id]);
+        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $orgId]);
+        DB::table('sport_user')->insert(['sport_id' => $sport->id, 'user_id' => $coach->id]);
 
-        $student = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
+        $student = User::factory()->create(['role' => 'student', 'organization_id' => $orgId, 'approval_status' => 'approved']);
 
         Notification::fake();
 
@@ -42,7 +43,7 @@ class StudentSportBrowseTest extends TestCase
             'status' => 'pending',
         ]);
 
-        Notification::assertSentTo($instructor, SportApplicationSubmitted::class);
+        Notification::assertSentTo($coach, SportApplicationSubmitted::class);
 
         $this->actingAs($student)
             ->post(route('student.sports.withdraw', $sport))

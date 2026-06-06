@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Mail\StudentWelcomeMail;
+use App\Models\Course;
 use App\Models\Organization;
+use App\Models\Section;
 use App\Models\Sport;
 use App\Models\User;
+use App\Models\YearLevel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -42,6 +45,10 @@ class AdminStudentManagementTest extends TestCase
             'slug' => 'soccer-'.uniqid(),
             'organization_id' => $org->id,
         ]);
+        
+        $course = Course::create(['organization_id' => $org->id, 'name' => 'BS Computer Science']);
+        $year = YearLevel::create(['organization_id' => $org->id, 'name' => 'First Year']);
+        $section = Section::create(['organization_id' => $org->id, 'name' => 'A']);
 
         $response = $this->actingAs($admin)->post(route('admin.students.store'), [
             'first_name' => 'Test',
@@ -52,7 +59,9 @@ class AdminStudentManagementTest extends TestCase
             'birthdate' => '2005-01-15',
             'gender' => 'male',
             'address' => '123 Campus Way',
-            'course' => 'BS Computer Science',
+            'course_id' => $course->id,
+            'year_level_id' => $year->id,
+            'section_id' => $section->id,
             'height_cm' => 175,
             'weight_kg' => 70,
             'sport_ids' => [$sport->id],
@@ -63,7 +72,7 @@ class AdminStudentManagementTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'athlete@test.example',
             'role' => 'student',
-            'name' => 'Test Athlete',
+            'name' => 'TEST ATHLETE',
         ]);
 
         $user = User::query()->where('email', 'athlete@test.example')->first();
@@ -72,9 +81,11 @@ class AdminStudentManagementTest extends TestCase
 
         $this->assertDatabaseHas('profiles', [
             'user_id' => $user->id,
-            'course' => 'BS Computer Science',
+            'course_id' => $course->id,
+            'year_level_id' => $year->id,
+            'section_id' => $section->id,
         ]);
 
-        Mail::assertSent(StudentWelcomeMail::class);
+        Mail::assertQueued(StudentWelcomeMail::class);
     }
 }

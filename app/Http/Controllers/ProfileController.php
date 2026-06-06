@@ -40,7 +40,9 @@ class ProfileController extends Controller
                 'birthdate' => $validated['birthdate'],
                 'gender' => RegistrationRules::normalizeGender($validated['gender']),
                 'address' => $validated['address'],
-                'course' => $validated['course'],
+                'course_id' => $validated['course_id'],
+                'year_level_id' => $validated['year_level_id'],
+                'section_id' => $validated['section_id'],
                 'height_cm' => $validated['height_cm'],
                 'weight_kg' => $validated['weight_kg'],
             ])->save();

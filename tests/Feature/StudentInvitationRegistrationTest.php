@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
 use App\Models\Organization;
+use App\Models\Section;
 use App\Models\Sport;
 use App\Models\User;
+use App\Models\YearLevel;
 use App\Notifications\StudentInvitationNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -25,6 +28,10 @@ class StudentInvitationRegistrationTest extends TestCase
             'name' => 'Soccer',
             'slug' => 'soccer-invite',
         ]);
+        
+        $c1 = Course::create(['organization_id' => $org->id, 'name' => 'C1']);
+        $y1 = YearLevel::create(['organization_id' => $org->id, 'name' => 'Y1']);
+        $s1 = Section::create(['organization_id' => $org->id, 'name' => 'S1']);
 
         $this->actingAs($admin)->post(route('admin.students.store'), [
             'first_name' => 'Invited',
@@ -35,7 +42,9 @@ class StudentInvitationRegistrationTest extends TestCase
             'birthdate' => '2005-01-01',
             'gender' => 'male',
             'address' => 'Campus',
-            'course' => 'BS PE',
+            'course_id' => $c1->id,
+            'year_level_id' => $y1->id,
+            'section_id' => $s1->id,
             'height_cm' => 175,
             'weight_kg' => 70,
             'sport_ids' => [$sport->id],
@@ -57,6 +66,10 @@ class StudentInvitationRegistrationTest extends TestCase
             'name' => 'Tennis',
             'slug' => 'tennis-invite',
         ]);
+        
+        $c1 = Course::create(['organization_id' => $org->id, 'name' => 'C1']);
+        $y1 = YearLevel::create(['organization_id' => $org->id, 'name' => 'Y1']);
+        $s1 = Section::create(['organization_id' => $org->id, 'name' => 'S1']);
 
         $token = str_repeat('a', 64);
         $user = User::factory()->unverified()->create([
@@ -78,7 +91,9 @@ class StudentInvitationRegistrationTest extends TestCase
             'birthdate' => '2004-05-05',
             'gender' => 'female',
             'address' => 'Dorm',
-            'course' => 'BS Athletics',
+            'course_id' => $c1->id,
+            'year_level_id' => $y1->id,
+            'section_id' => $s1->id,
             'height_cm' => 168,
             'weight_kg' => 60,
             'sports_interested' => [$sport->id],
@@ -98,6 +113,10 @@ class StudentInvitationRegistrationTest extends TestCase
             'name' => 'Swim',
             'slug' => 'swim-open',
         ]);
+        
+        $c1 = Course::create(['organization_id' => $org->id, 'name' => 'C1']);
+        $y1 = YearLevel::create(['organization_id' => $org->id, 'name' => 'Y1']);
+        $s1 = Section::create(['organization_id' => $org->id, 'name' => 'S1']);
 
         $response = $this->post('/register/student', [
             'first_name' => 'Open',
@@ -108,7 +127,9 @@ class StudentInvitationRegistrationTest extends TestCase
             'birthdate' => '2005-06-15',
             'gender' => 'male',
             'address' => 'Test Address',
-            'course' => 'BS Sports Science',
+            'course_id' => $c1->id,
+            'year_level_id' => $y1->id,
+            'section_id' => $s1->id,
             'height_cm' => 170,
             'weight_kg' => 65,
             'sports_interested' => [$sport->id],

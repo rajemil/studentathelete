@@ -35,6 +35,7 @@ class StudentParticipationLogsTest extends TestCase
         return User::factory()->create([
             'role' => 'student',
             'organization_id' => $org->id,
+            'approval_status' => 'approved',
         ]);
     }
 
