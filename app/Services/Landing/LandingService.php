@@ -334,7 +334,13 @@ class LandingService
 
     protected function getFooterSettings(): ?array
     {
-        $settings = OrganizationSetting::first();
+        $orgId = auth()->check() ? auth()->user()->organization_id : OrganizationSetting::first()?->organization_id;
+
+        if (!$orgId) {
+            return null;
+        }
+
+        $settings = OrganizationSetting::where('organization_id', $orgId)->first();
         return $settings ? $settings->toArray() : null;
     }
 }

@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'org' => EnsureUserHasOrganization::class,
             'role' => EnsureUserHasRole::class,
+            'approved' => \App\Http\Middleware\EnsureStudentApproved::class,
         ]);
 
         $middleware->web(append: [

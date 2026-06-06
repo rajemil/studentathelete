@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\StudentWelcomeMail;
 use App\Notifications\StudentInvitationNotification;
+use App\Models\Course;
 use App\Models\Profile;
+use App\Models\Section;
 use App\Models\Sport;
 use App\Models\User;
+use App\Models\YearLevel;
 use App\Support\PersonName;
 use App\Support\RegistrationRules;
 use Carbon\CarbonImmutable;
@@ -42,7 +45,11 @@ class AdminStudentController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.students.index', compact('students', 'sports'));
+        $courses = Course::query()->where('organization_id', $orgId)->orderBy('name')->get();
+        $yearLevels = YearLevel::query()->where('organization_id', $orgId)->orderBy('name')->get();
+        $sections = Section::query()->where('organization_id', $orgId)->orderBy('name')->get();
+
+        return view('admin.students.index', compact('students', 'sports', 'courses', 'yearLevels', 'sections'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -57,7 +64,7 @@ class AdminStudentController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             ],
             RegistrationRules::passwordRequired(),
-            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::studentProfileFields($orgId, true),
             RegistrationRules::sportIds($orgId),
             [
                 'photo' => ['nullable', 'file', 'image', 'max:5120'],
@@ -71,6 +78,7 @@ class AdminStudentController extends Controller
             'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
             'email' => $validated['email'],
             'role' => 'student',
+            'approval_status' => 'approved',
             'password' => Hash::make($validated['password']),
             'invitation_token' => $invitationToken,
             'invited_at' => now(),
@@ -80,8 +88,10 @@ class AdminStudentController extends Controller
             'user_id' => $user->id,
             'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
             'gender' => RegistrationRules::normalizeGender($validated['gender']),
-            'address' => $validated['address'],
-            'course' => $validated['course'],
+            'address' => mb_strtoupper($validated['address']),
+            'course_id' => $validated['course_id'],
+            'year_level_id' => $validated['year_level_id'],
+            'section_id' => $validated['section_id'],
             'height_cm' => (float) $validated['height_cm'],
             'weight_kg' => (float) $validated['weight_kg'],
         ]);
@@ -128,7 +138,7 @@ class AdminStudentController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             ],
             RegistrationRules::passwordOptional(),
-            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::studentProfileFields($orgId, true),
             RegistrationRules::sportIds($orgId),
             [
                 'photo' => ['nullable', 'file', 'image', 'max:5120'],
@@ -148,8 +158,10 @@ class AdminStudentController extends Controller
         $profile->fill([
             'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
             'gender' => RegistrationRules::normalizeGender($validated['gender']),
-            'address' => $validated['address'],
-            'course' => $validated['course'],
+            'address' => mb_strtoupper($validated['address']),
+            'course_id' => $validated['course_id'],
+            'year_level_id' => $validated['year_level_id'],
+            'section_id' => $validated['section_id'],
             'height_cm' => (float) $validated['height_cm'],
             'weight_kg' => (float) $validated['weight_kg'],
         ])->save();

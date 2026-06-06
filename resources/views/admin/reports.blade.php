@@ -15,10 +15,7 @@
             <div class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Coaches</div>
             <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{{ $summary['coaches'] }}</div>
         </div>
-        <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-5">
-            <div class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Instructors</div>
-            <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{{ $summary['instructors'] }}</div>
-        </div>
+
         <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-5">
             <div class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Sports</div>
             <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{{ $summary['sports'] }}</div>

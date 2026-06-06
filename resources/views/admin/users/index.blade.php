@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
                 <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Faculty management</h2>
-                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage coach and instructor accounts.</div>
+                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage coach accounts.</div>
             </div>
         </div>
     </x-slot>
@@ -78,7 +78,7 @@
                                 <div>
                                     <x-input-label for="role" value="Role" />
                                     <select id="role" name="role" x-model="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
-                                        @foreach(['coach','instructor'] as $r)
+                                        @foreach(['coach'] as $r)
                                             <option value="{{ $r }}" @selected(old('role', 'coach') === $r)>{{ ucfirst($r) }}</option>
                                         @endforeach
                                     </select>

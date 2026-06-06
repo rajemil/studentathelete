@@ -262,5 +262,10 @@ class DatabaseSeeder extends Seeder
                 activity()->causedBy($admin)->withProperties(['organization_id' => $orgId])->log('seed_demo_completed');
             }
         }
+
+        $this->call([
+            OrganizationSettingSeeder::class,
+            TeamMemberSeeder::class,
+        ]);
     }
 }

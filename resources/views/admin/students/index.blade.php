@@ -18,7 +18,9 @@
         manageFirstName: '',
         manageLastName: '',
         manageEmail: '',
-        manageCourse: '',
+        manageCourseId: '',
+        manageYearLevelId: '',
+        manageSectionId: '',
         manageBirthdate: '',
         manageGender: '',
         manageAddress: '',
@@ -58,7 +60,9 @@
             this.manageFirstName = s.first_name || '';
             this.manageLastName = s.last_name || '';
             this.manageEmail = s.email;
-            this.manageCourse = s.course || '';
+            this.manageCourseId = s.course_id || '';
+            this.manageYearLevelId = s.year_level_id || '';
+            this.manageSectionId = s.section_id || '';
             this.manageBirthdate = s.birthdate || '';
             this.manageGender = s.gender || '';
             this.manageAddress = s.address || '';
@@ -134,6 +138,7 @@
                                 <div>
                                     <x-input-label for="add_password" value="Password" />
                                     <x-text-input id="add_password" name="password" type="password" class="mt-1 block w-full" required autocomplete="new-password" />
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Min 6 characters, 1 uppercase, 1 number.</p>
                                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
                                 </div>
                                 <div>
@@ -161,13 +166,38 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <x-input-label for="add_course" value="Course / Program" />
-                                    <x-text-input id="add_course" name="course" type="text" class="mt-1 block w-full" :value="old('course')" required />
-                                    <x-input-error :messages="$errors->get('course')" class="mt-2" />
+                                    <x-input-label for="add_course_id" value="Course / Program" />
+                                    <select id="add_course_id" name="course_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                                        <option value="">Select...</option>
+                                        @foreach($courses as $c)
+                                            <option value="{{ $c->id }}" @selected(old('course_id') == $c->id)>{{ $c->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="add_year_level_id" value="Year Level" />
+                                    <select id="add_year_level_id" name="year_level_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                                        <option value="">Select...</option>
+                                        @foreach($yearLevels as $yl)
+                                            <option value="{{ $yl->id }}" @selected(old('year_level_id') == $yl->id)>{{ $yl->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('year_level_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="add_section_id" value="Section" />
+                                    <select id="add_section_id" name="section_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                                        <option value="">Select...</option>
+                                        @foreach($sections as $s)
+                                            <option value="{{ $s->id }}" @selected(old('section_id') == $s->id)>{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('section_id')" class="mt-2" />
                                 </div>
                                 <div class="sm:col-span-2">
                                     <x-input-label for="add_address" value="Address" />
-                                    <x-text-input id="add_address" name="address" type="text" class="mt-1 block w-full" :value="old('address')" required />
+                                    <x-text-input id="add_address" name="address" type="text" class="mt-1 block w-full" :value="old('address')" required style="text-transform: uppercase;" />
                                 </div>
                                 <div>
                                     <x-input-label for="add_height" value="Height (cm)" />
@@ -241,7 +271,30 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Course / Program</label>
-                            <input name="course" type="text" x-model="manageCourse" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" required />
+                            <select name="course_id" x-model="manageCourseId" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" required>
+                                <option value="">Select...</option>
+                                @foreach($courses as $c)
+                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Year Level</label>
+                            <select name="year_level_id" x-model="manageYearLevelId" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" required>
+                                <option value="">Select...</option>
+                                @foreach($yearLevels as $yl)
+                                    <option value="{{ $yl->id }}">{{ $yl->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Section</label>
+                            <select name="section_id" x-model="manageSectionId" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" required>
+                                <option value="">Select...</option>
+                                @foreach($sections as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">New password</label>
@@ -262,7 +315,7 @@
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Address</label>
-                            <input name="address" type="text" x-model="manageAddress" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" required />
+                            <input name="address" type="text" x-model="manageAddress" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" required style="text-transform: uppercase;" />
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Height (cm)</label>
@@ -338,7 +391,9 @@
                                     'first_name' => $nameParts['first_name'],
                                     'last_name' => $nameParts['last_name'],
                                     'email' => $stu->email,
-                                    'course' => $p?->course,
+                                    'course_id' => $p?->course_id,
+                                    'year_level_id' => $p?->year_level_id,
+                                    'section_id' => $p?->section_id,
                                     'birthdate' => optional($p?->birthdate)->format('Y-m-d'),
                                     'gender' => $p?->gender,
                                     'address' => $p?->address,

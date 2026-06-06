@@ -62,8 +62,12 @@ Route::middleware(['auth', 'org'])->group(function () {
         ->name('instructor.dashboard');
 
     Route::get('/student/dashboard', StudentDashboardController::class)
-        ->middleware('role:student')
+        ->middleware(['role:student', 'approved'])
         ->name('student.dashboard');
+
+    Route::get('/approval-pending', function () {
+        return view('auth.approval-pending');
+    })->name('approval.pending');
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
@@ -82,6 +86,17 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::get('/admin/reports/performance-scores.csv', [AdminReportsController::class, 'export'])
             ->name('admin.reports.performance_scores_csv');
         Route::get('/admin/system', [AdminSystemConfigController::class, 'index'])->name('admin.system.index');
+
+        Route::post('/admin/system/courses', [AdminSystemConfigController::class, 'storeCourse'])->name('admin.system.courses.store');
+        Route::delete('/admin/system/courses/{course}', [AdminSystemConfigController::class, 'destroyCourse'])->name('admin.system.courses.destroy');
+        Route::post('/admin/system/year-levels', [AdminSystemConfigController::class, 'storeYearLevel'])->name('admin.system.years.store');
+        Route::delete('/admin/system/year-levels/{yearLevel}', [AdminSystemConfigController::class, 'destroyYearLevel'])->name('admin.system.years.destroy');
+        Route::post('/admin/system/sections', [AdminSystemConfigController::class, 'storeSection'])->name('admin.system.sections.store');
+        Route::delete('/admin/system/sections/{section}', [AdminSystemConfigController::class, 'destroySection'])->name('admin.system.sections.destroy');
+
+        Route::resource('admin/team-members', \App\Http\Controllers\Admin\AdminTeamMemberController::class)
+            ->except(['create', 'show', 'edit'])
+            ->names('admin.team_members');
 
         Route::get('/admin/academics', [AdminAcademicController::class, 'index'])->name('admin.academics.index');
         Route::post('/admin/academics/record', [AdminAcademicController::class, 'storeRecord'])->name('admin.academics.records.store');
@@ -104,10 +119,12 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::post('/staff/events', [StaffEventController::class, 'store'])->name('staff.events.store');
         Route::get('/staff/events/{event}/edit', [StaffEventController::class, 'edit'])->name('staff.events.edit');
         Route::patch('/staff/events/{event}', [StaffEventController::class, 'update'])->name('staff.events.update');
-        Route::delete('/staff/events/{event}', [StaffEventController::class, 'destroy'])->name('staff.events.destroy');
+        Route::get('/staff/students', [\App\Http\Controllers\Staff\CoachStudentController::class, 'index'])->name('staff.students.index');
+        Route::post('/staff/students/{user}/approve', [\App\Http\Controllers\Staff\CoachStudentController::class, 'approve'])->name('staff.students.approve');
+        Route::post('/staff/students/{user}/reject', [\App\Http\Controllers\Staff\CoachStudentController::class, 'reject'])->name('staff.students.reject');
     });
 
-    Route::middleware('role:student')->group(function () {
+    Route::middleware(['role:student', 'approved'])->group(function () {
         Route::get('/student/sports', [StudentSportBrowseController::class, 'index'])->name('student.sports.index');
         Route::post('/student/sports/{sport}/apply', [StudentSportBrowseController::class, 'apply'])->name('student.sports.apply');
         Route::post('/student/sports/{sport}/withdraw', [StudentSportBrowseController::class, 'withdraw'])->name('student.sports.withdraw');

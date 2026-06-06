@@ -457,7 +457,7 @@
                 <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <template x-for="member in (teamMembers && teamMembers.length ? teamMembers : [
                         {description: 'We cut planning time in half and improved lineup decisions immediately.', name: 'Head Coach', role: 'University Athletics'},
-                        {description: 'The rankings and win probability changed how we prepare for meets.', name: 'PE Instructor', role: 'Public School District'},
+                        {description: 'The rankings and win probability changed how we prepare for meets.', name: 'Athletics Coach', role: 'Public School District'},
                         {description: 'Clean UI, fast workflows, and the analytics are easy to trust.', name: 'Athletic Director', role: 'Private Academy'}
                     ])">
                         <x-ui.card class="p-6" data-reveal>

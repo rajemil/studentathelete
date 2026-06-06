@@ -56,7 +56,7 @@ class CoachRegisteredUserController extends Controller
                 'user_id' => $user->id,
                 'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
                 'gender' => RegistrationRules::normalizeGender($validated['gender']),
-                'address' => $validated['address'],
+                'address' => mb_strtoupper($validated['address']),
                 'field_expertise' => $validated['field_expertise'],
                 'achievements' => $validated['achievements'] ?? null,
                 'profession' => $validated['profession'],

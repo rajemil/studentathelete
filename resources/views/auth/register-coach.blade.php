@@ -29,6 +29,12 @@
                             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
                             <x-input-error :messages="$errors->get('email')" class="mt-2" />
                         </div>
+
+                        <div>
+                            <x-input-label for="address" value="Address" />
+                            <x-text-input id="address" class="block mt-1 w-full" type="text" name="address" :value="old('address')" required style="text-transform: uppercase;" />
+                            <x-input-error :messages="$errors->get('address')" class="mt-2" />
+                        </div>
                     </section>
 
                     <section class="space-y-4">
@@ -57,6 +63,7 @@
                             <div>
                                 <x-input-label for="password" value="Password" />
                                 <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Min 6 characters, 1 uppercase, 1 number.</p>
                                 <x-input-error :messages="$errors->get('password')" class="mt-2" />
                             </div>
                             <div>

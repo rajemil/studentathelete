@@ -27,7 +27,7 @@
             <div>
                 <x-input-label for="role" value="Role" />
                 <select id="role" name="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
-                    @foreach(['admin','coach','instructor'] as $r)
+                    @foreach(['admin','coach'] as $r)
                         <option value="{{ $r }}" @selected(old('role', $user->role) === $r)>{{ ucfirst($r) }}</option>
                     @endforeach
                 </select>

@@ -2,14 +2,13 @@
     $role = Auth::user()->role ?? 'student';
     $isAdmin = $role === 'admin';
     $isCoach = $role === 'coach';
-    $isInstructor = $role === 'instructor';
     $isStudent = $role === 'student';
-    $staffSports = $isAdmin || $isCoach || $isInstructor;
-    $coachLike = $isCoach || $isInstructor;
+    $staffSports = $isAdmin || $isCoach;
+    $coachLike = $isCoach;
 @endphp
 
 <a href="{{ route('dashboard') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">
-    @if($isAdmin) Admin dashboard @elseif($isCoach) Coach dashboard @elseif($isInstructor) Instructor dashboard @else Dashboard @endif
+    @if($isAdmin) Admin dashboard @elseif($isCoach) Coach dashboard @else Dashboard @endif
 </a>
 
 @if($isAdmin)
@@ -22,6 +21,7 @@
 @endif
 
 @if($coachLike)
+    <a href="{{ route('staff.students.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Students</a>
     <a href="{{ route('staff.performance_scores.hub') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Performance scores</a>
     <a href="{{ route('staff.injury_logs.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Injury & health logs</a>
     <a href="{{ route('staff.ai_recommendations.hub') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Predictive recommendations</a>

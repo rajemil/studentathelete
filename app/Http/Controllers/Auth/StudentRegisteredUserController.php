@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Models\Organization;
 use App\Models\Profile;
+use App\Models\Section;
 use App\Models\Sport;
 use App\Models\User;
+use App\Models\YearLevel;
 use App\Support\PersonName;
 use App\Support\RegistrationRules;
 use Carbon\CarbonImmutable;
@@ -33,8 +36,15 @@ class StudentRegisteredUserController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $courses = Course::query()->where('organization_id', $orgId)->orderBy('name')->get(['id', 'name']);
+        $yearLevels = YearLevel::query()->where('organization_id', $orgId)->orderBy('name')->get(['id', 'name']);
+        $sections = Section::query()->where('organization_id', $orgId)->orderBy('name')->get(['id', 'name']);
+
         return view('auth.register-student', [
             'sports' => $sports,
+            'courses' => $courses,
+            'yearLevels' => $yearLevels,
+            'sections' => $sections,
             'invitedUser' => $invitedUser,
             'invitationToken' => $request->query('token'),
         ]);
@@ -64,7 +74,7 @@ class StudentRegisteredUserController extends Controller
                 'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             ],
             RegistrationRules::passwordRequired(),
-            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::studentProfileFields($orgId, true),
             RegistrationRules::sportsInterested($orgId),
         ));
 
@@ -74,6 +84,7 @@ class StudentRegisteredUserController extends Controller
                 'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
                 'email' => $validated['email'],
                 'role' => 'student',
+                'approval_status' => 'pending',
                 'password' => Hash::make($validated['password']),
             ]);
 
@@ -81,8 +92,10 @@ class StudentRegisteredUserController extends Controller
                 'user_id' => $user->id,
                 'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
                 'gender' => RegistrationRules::normalizeGender($validated['gender']),
-                'address' => $validated['address'],
-                'course' => $validated['course'],
+                'address' => mb_strtoupper($validated['address']),
+                'course_id' => $validated['course_id'],
+                'year_level_id' => $validated['year_level_id'],
+                'section_id' => $validated['section_id'],
                 'height_cm' => $validated['height_cm'],
                 'weight_kg' => $validated['weight_kg'],
                 'sports_interested' => $validated['sports_interested'] ?? [],
@@ -124,7 +137,7 @@ class StudentRegisteredUserController extends Controller
                 'invitation_token' => ['required', 'string'],
             ],
             RegistrationRules::passwordRequired(),
-            RegistrationRules::studentProfileFields(true),
+            RegistrationRules::studentProfileFields($orgId, true),
             RegistrationRules::sportsInterested($orgId),
         ));
 
@@ -153,8 +166,10 @@ class StudentRegisteredUserController extends Controller
             $profile->fill([
                 'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
                 'gender' => RegistrationRules::normalizeGender($validated['gender']),
-                'address' => $validated['address'],
-                'course' => $validated['course'],
+                'address' => mb_strtoupper($validated['address']),
+                'course_id' => $validated['course_id'],
+                'year_level_id' => $validated['year_level_id'],
+                'section_id' => $validated['section_id'],
                 'height_cm' => $validated['height_cm'],
                 'weight_kg' => $validated['weight_kg'],
                 'sports_interested' => $validated['sports_interested'] ?? [],

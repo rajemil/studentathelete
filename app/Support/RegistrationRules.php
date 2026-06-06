@@ -18,30 +18,36 @@ final class RegistrationRules
         ];
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public static function passwordRequired(): array
     {
         return [
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                'min:6',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/'
+            ],
         ];
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public static function passwordOptional(): array
     {
         return [
-            'password' => ['nullable', 'confirmed', Password::defaults()],
+            'password' => [
+                'nullable',
+                'confirmed',
+                'min:6',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/'
+            ],
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    public static function studentProfileFields(bool $requireAll = true): array
+    public static function studentProfileFields(int $organizationId, bool $requireAll = true): array
     {
         $required = $requireAll ? 'required' : 'nullable';
 
@@ -49,7 +55,21 @@ final class RegistrationRules
             'birthdate' => [$required, 'date', 'before:today', 'after:'.now()->subYears(80)->toDateString()],
             'gender' => [$required, 'string', 'in:male,female,other,prefer_not_to_say,Male,Female,Non-binary,Prefer not to say'],
             'address' => [$required, 'string', 'max:255'],
-            'course' => [$required, 'string', 'max:255'],
+            'course_id' => [
+                $required,
+                'integer',
+                Rule::exists('courses', 'id')->where(fn ($query) => $query->where('organization_id', $organizationId))
+            ],
+            'year_level_id' => [
+                $required,
+                'integer',
+                Rule::exists('year_levels', 'id')->where(fn ($query) => $query->where('organization_id', $organizationId))
+            ],
+            'section_id' => [
+                $required,
+                'integer',
+                Rule::exists('sections', 'id')->where(fn ($query) => $query->where('organization_id', $organizationId))
+            ],
             'height_cm' => [$required, 'numeric', 'min:50', 'max:300'],
             'weight_kg' => [$required, 'numeric', 'min:10', 'max:350'],
         ];

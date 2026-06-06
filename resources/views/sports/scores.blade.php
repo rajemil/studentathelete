@@ -3,7 +3,7 @@
         <div class="flex items-start justify-between gap-4">
             <div>
                 <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Score entry</h2>
-                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ $sport->name }} · PE instructor / coach scoring</div>
+                <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ $sport->name }} · Coach scoring</div>
             </div>
             @unless(request()->boolean('modal'))
                 <div class="flex items-center gap-2">

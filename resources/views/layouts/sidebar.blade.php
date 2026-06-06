@@ -2,10 +2,9 @@
     $role = Auth::user()->role ?? 'student';
     $isAdmin = $role === 'admin';
     $isCoach = $role === 'coach';
-    $isInstructor = $role === 'instructor';
     $isStudent = $role === 'student';
-    $staffSports = $isAdmin || $isCoach || $isInstructor;
-    $coachLike = $isCoach || $isInstructor;
+    $staffSports = $isAdmin || $isCoach;
+    $coachLike = $isCoach;
 @endphp
 
 <aside class="hidden lg:flex lg:flex-col lg:w-72 lg:shrink-0 h-[calc(100vh-3rem)] sticky top-6">
@@ -52,8 +51,6 @@
                         Admin dashboard
                     @elseif($isCoach)
                         Coach dashboard
-                    @elseif($isInstructor)
-                        Instructor dashboard
                     @else
                         Dashboard
                     @endif
@@ -93,6 +90,23 @@
                     <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Team & sport</div>
                 @endif
 
+                @if($isCoach)
+                    <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Student management</div>
+                    <a href="{{ route('staff.students.index') }}"
+                        class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
+                            {{ request()->routeIs('staff.students.*') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
+                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ request()->routeIs('staff.students.*') ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </span>
+                        Students
+                    </a>
+                @endif
+
                 @if($staffSports)
                     <a href="{{ route('sports.index') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
@@ -108,8 +122,6 @@
                             <span class="truncate">
                                 @if($isAdmin)
                                     Sports & teams
-                                @elseif($isInstructor)
-                                    Assigned classes & sports
                                 @else
                                     Coached teams & sports
                                 @endif
@@ -124,7 +136,7 @@
                 @endif
 
                 @if($coachLike)
-                    <div class="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ $isInstructor ? 'Instruction' : 'Coaching' }}</div>
+                    <div class="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Coaching</div>
                     <a href="{{ route('staff.performance_scores.hub') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
                             {{ request()->routeIs('staff.performance_scores.hub') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
@@ -133,7 +145,7 @@
                                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
                         </span>
-                        {{ $isInstructor ? 'Student performance scores' : 'Performance scores' }}
+                        Performance scores
                     </a>
                     <a href="{{ route('staff.injury_logs.index') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition

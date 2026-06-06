@@ -6,7 +6,7 @@ final class PersonName
 {
     public static function combine(string $firstName, string $lastName): string
     {
-        return trim($firstName.' '.$lastName);
+        return mb_strtoupper(trim($firstName.' '.$lastName));
     }
 
     /**

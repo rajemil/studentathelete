@@ -28,14 +28,41 @@
 
             <div>
                 <x-input-label for="email" value="Email" />
-                <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $invitedUser->email ?? '')" @if($invitedUser ?? null) readonly @endif required autocomplete="username" />
+                <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $invitedUser->email ?? '')" :readonly="isset($invitedUser) ? true : false" required autocomplete="username" />
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
 
-            <div>
-                <x-input-label for="course" value="Course / Program" />
-                <x-text-input id="course" class="block mt-1 w-full" type="text" name="course" :value="old('course')" required />
-                <x-input-error :messages="$errors->get('course')" class="mt-2" />
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <x-input-label for="course_id" value="Course / Program" />
+                    <select id="course_id" name="course_id" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                        <option value="">Select...</option>
+                        @foreach($courses as $c)
+                            <option value="{{ $c->id }}" @selected(old('course_id') == $c->id)>{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
+                </div>
+                <div>
+                    <x-input-label for="year_level_id" value="Year Level" />
+                    <select id="year_level_id" name="year_level_id" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                        <option value="">Select...</option>
+                        @foreach($yearLevels as $yl)
+                            <option value="{{ $yl->id }}" @selected(old('year_level_id') == $yl->id)>{{ $yl->name }}</option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('year_level_id')" class="mt-2" />
+                </div>
+                <div>
+                    <x-input-label for="section_id" value="Section" />
+                    <select id="section_id" name="section_id" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
+                        <option value="">Select...</option>
+                        @foreach($sections as $s)
+                            <option value="{{ $s->id }}" @selected(old('section_id') == $s->id)>{{ $s->name }}</option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('section_id')" class="mt-2" />
+                </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -64,7 +91,7 @@
 
             <div>
                 <x-input-label for="address" value="Address" />
-                <x-text-input id="address" class="block mt-1 w-full" type="text" name="address" :value="old('address')" required />
+                <x-text-input id="address" class="block mt-1 w-full" type="text" name="address" :value="old('address')" required style="text-transform: uppercase;" />
                 <x-input-error :messages="$errors->get('address')" class="mt-2" />
             </div>
 
@@ -109,6 +136,7 @@
                 <div>
                     <x-input-label for="password" value="Password" />
                     <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Min 6 characters, 1 uppercase, 1 number.</p>
                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
                 </div>
                 <div>
