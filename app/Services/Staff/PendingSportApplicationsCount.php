@@ -21,7 +21,7 @@ final class PendingSportApplicationsCount
 
     public static function forUser(User $user): int
     {
-        if (! in_array($user->role, ['admin', 'coach', 'instructor'], true)) {
+        if (! in_array($user->role, ['admin', 'coach'], true)) {
             return 0;
         }
 
@@ -58,7 +58,7 @@ final class PendingSportApplicationsCount
 
         User::query()
             ->where('organization_id', $organizationId)
-            ->whereIn('role', ['coach', 'instructor'])
+            ->whereIn('role', ['coach'])
             ->select('id', 'role', 'organization_id')
             ->cursor()
             ->each(fn (User $user) => Cache::forget(self::cacheKey($user)));
@@ -104,14 +104,7 @@ final class PendingSportApplicationsCount
             ->pluck('sport_id');
         $ids = $ids->merge($pivotSportIds);
 
-        if ($user->role === 'instructor') {
-            $ids = $ids->merge(
-                Sport::query()
-                    ->where('organization_id', $orgId)
-                    ->where('instructor_user_id', $user->id)
-                    ->pluck('id')
-            );
-        }
+
 
         $teamIds = CoachedTeams::teamIds($user);
         if ($teamIds->isNotEmpty()) {

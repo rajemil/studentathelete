@@ -23,7 +23,6 @@ class AdminReportsController extends Controller
         $summary = [
             'students' => User::query()->where('organization_id', $orgId)->where('role', 'student')->count(),
             'coaches' => User::query()->where('organization_id', $orgId)->where('role', 'coach')->count(),
-            'instructors' => User::query()->where('organization_id', $orgId)->where('role', 'instructor')->count(),
             'sports' => Sport::query()->where('organization_id', $orgId)->count(),
             'teams' => Team::query()->where('organization_id', $orgId)->count(),
             'scores_30d' => PerformanceScore::query()

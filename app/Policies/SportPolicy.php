@@ -10,7 +10,7 @@ class SportPolicy
     public function viewAny(User $user): bool
     {
         return $user->organization_id !== null
-            && in_array($user->role, ['admin', 'coach', 'instructor', 'student'], true);
+            && in_array($user->role, ['admin', 'coach', 'student'], true);
     }
 
     public function view(User $user, Sport $sport): bool
@@ -21,7 +21,7 @@ class SportPolicy
 
         return match ($user->role) {
             'admin' => true,
-            'coach', 'instructor' => true,
+            'coach' => true,
             'student' => $user->sports()->where('sports.id', $sport->id)->exists(),
             default => false,
         };
@@ -41,7 +41,7 @@ class SportPolicy
 
         return match ($user->role) {
             'admin' => true,
-            'coach', 'instructor' => collect($user->sports()->pluck('sports.id'))->contains($sport->id),
+            'coach' => collect($user->sports()->pluck('sports.id'))->contains($sport->id),
             default => false,
         };
     }
@@ -57,7 +57,7 @@ class SportPolicy
             return false;
         }
 
-        return in_array($user->role, ['admin', 'coach', 'instructor'], true);
+        return in_array($user->role, ['admin', 'coach'], true);
     }
 
     public function recordScores(User $user, Sport $sport): bool

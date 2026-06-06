@@ -9,7 +9,6 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Dashboard\CoachDashboardController;
 use App\Http\Controllers\Dashboard\DashboardRedirectController;
-use App\Http\Controllers\Dashboard\InstructorDashboardController;
 use App\Http\Controllers\Dashboard\StudentDashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PerformanceScoreController;
@@ -57,10 +56,6 @@ Route::middleware(['auth', 'org'])->group(function () {
         ->middleware('role:coach')
         ->name('coach.dashboard');
 
-    Route::get('/instructor/dashboard', InstructorDashboardController::class)
-        ->middleware('role:instructor')
-        ->name('instructor.dashboard');
-
     Route::get('/student/dashboard', StudentDashboardController::class)
         ->middleware(['role:student', 'approved'])
         ->name('student.dashboard');
@@ -105,7 +100,7 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::get('/admin/academics/export', [AdminAcademicController::class, 'export'])->name('admin.academics.export');
     });
 
-    Route::middleware('role:coach,instructor')->group(function () {
+    Route::middleware('role:coach')->group(function () {
         Route::get('/staff/injury-logs', StaffInjuryLogsController::class)->name('staff.injury_logs.index');
         Route::get('/staff/injury-records', [StaffInjuryRecordsController::class, 'index'])->name('staff.injury_records.index');
         Route::post('/staff/injury-records', [StaffInjuryRecordsController::class, 'store'])->name('staff.injury_records.store');
@@ -136,7 +131,7 @@ Route::middleware(['auth', 'org'])->group(function () {
         Route::get('/student/academics', [StudentAcademicController::class, 'index'])->name('student.academics.index');
     });
 
-    Route::middleware('role:admin,coach,instructor')->group(function () {
+    Route::middleware('role:admin,coach')->group(function () {
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
         Route::resource('sports', SportController::class);

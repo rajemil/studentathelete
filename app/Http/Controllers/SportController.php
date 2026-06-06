@@ -33,7 +33,7 @@ class SportController extends Controller
             ])
             ->orderBy('name');
 
-        if (in_array($user->role, ['coach', 'instructor'], true)) {
+        if (in_array($user->role, ['coach'], true)) {
             // Get sports the faculty is explicitly assigned to via sport_user
             $assignedSportIds = $user->sports()->pluck('sports.id')->unique()->filter();
 

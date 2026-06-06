@@ -19,8 +19,8 @@ class Sport extends Model
 
     protected $fillable = [
         'organization_id',
-        'instructor_user_id',
         'name',
+        'photo_path',
         'slug',
         'description',
         'qual_min_age',
@@ -46,10 +46,7 @@ class Sport extends Model
         return $this->belongsTo(Organization::class);
     }
 
-    public function instructor(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'instructor_user_id');
-    }
+
 
     public function students(): BelongsToMany
     {

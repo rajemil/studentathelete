@@ -57,7 +57,6 @@ class LandingService
             return [
                 'students'    => User::where('role', 'student')->count(),
                 'coaches'     => User::where('role', 'coach')->count(),
-                'instructors' => User::where('role', 'instructor')->count(),
                 'sports'      => Sport::count(),
                 'teams'       => Team::count(),
                 'events'      => Event::count(),

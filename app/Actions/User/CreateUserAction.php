@@ -22,7 +22,7 @@ class CreateUserAction
     }
 
     /**
-     * Create a new faculty member (admin, coach, instructor).
+     * Create a new faculty member (admin, coach).
      *
      * @param  array  $data
      * @param  int  $orgId
@@ -49,7 +49,7 @@ class CreateUserAction
             'user_id' => $user->id,
             'birthdate' => $birthdate?->toDateString(),
             'gender' => $data['gender'] ?? null,
-            'address' => $data['address'] ?? null,
+            'address' => isset($data['address']) ? mb_strtoupper($data['address']) : null,
             'profession' => $data['profession'] ?? null,
             'field_expertise' => $data['field_expertise'] ?? null,
             'achievements' => $data['achievements'] ?? null,
@@ -73,11 +73,11 @@ class CreateUserAction
             ->unique()
             ->values();
 
-        // Enforce: one faculty (coach/instructor) per sport.
+        // Enforce: one faculty (coach) per sport.
         $alreadyAssignedSportIds = DB::table('sport_user')
             ->join('users', 'sport_user.user_id', '=', 'users.id')
             ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach', 'instructor'])
+            ->whereIn('users.role', ['coach'])
             ->whereIn('sport_user.sport_id', $desiredSportIds->all())
             ->distinct()
             ->pluck('sport_user.sport_id')
@@ -106,13 +106,7 @@ class CreateUserAction
         // Call our AssignCoachAction
         $this->assignCoachAction->execute($user, $teamIds, $teamIds);
 
-        if ($user->role === 'instructor') {
-            Sport::query()
-                ->where('organization_id', $orgId)
-                ->whereIn('id', $desiredSportIds)
-                ->whereNull('instructor_user_id')
-                ->update(['instructor_user_id' => $user->id]);
-        }
+
 
         activity()
             ->performedOn($user)

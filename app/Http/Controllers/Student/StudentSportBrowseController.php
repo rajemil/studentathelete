@@ -96,13 +96,11 @@ class StudentSportBrowseController extends Controller
         );
 
         $recipientIds = collect();
-        if ($sport->instructor_user_id) {
-            $recipientIds->push((int) $sport->instructor_user_id);
-        }
+
         
         // Also notify all staff explicitly assigned to this sport via the pivot table
         $assignedStaffIds = $sport->belongsToMany(User::class, 'sport_user')
-            ->whereIn('role', ['coach', 'instructor', 'admin'])
+            ->whereIn('role', ['coach', 'admin'])
             ->pluck('users.id');
         $recipientIds = $recipientIds->merge($assignedStaffIds);
 

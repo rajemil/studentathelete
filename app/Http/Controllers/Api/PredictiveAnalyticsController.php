@@ -155,7 +155,7 @@ class PredictiveAnalyticsController extends Controller
             return;
         }
 
-        if (! in_array($actor->role, ['coach', 'instructor'], true)) {
+        if (! in_array($actor->role, ['coach'], true)) {
             abort(403);
         }
 

@@ -34,7 +34,7 @@ final class RosterAccess
             return false;
         }
 
-        if (! in_array($actor->role, ['coach', 'instructor'], true)) {
+        if (! in_array($actor->role, ['coach'], true)) {
             return false;
         }
 
@@ -67,7 +67,7 @@ final class RosterAccess
             return true;
         }
 
-        if (in_array($role, ['coach', 'instructor'], true)) {
+        if (in_array($role, ['coach'], true)) {
             return self::coachedStudentIds($actor)->contains((int) $athlete->id);
         }
 
@@ -77,7 +77,7 @@ final class RosterAccess
     /**
      * Used for score entry.
      *
-     * Policy: admin OK; coach/instructor OK if same org and athlete is enrolled in sport.
+     * Policy: admin OK; coach OK if same org and athlete is enrolled in sport.
      * If teams exist for that sport, you can tighten this later to require coached roster.
      */
     public static function actorMayEnterScoreFor(User $actor, User $athlete, Sport $sport): bool
@@ -94,6 +94,6 @@ final class RosterAccess
             return true;
         }
 
-        return in_array($actor->role, ['coach', 'instructor'], true);
+        return in_array($actor->role, ['coach'], true);
     }
 }

@@ -10,7 +10,7 @@ class EventPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->organization_id !== null && in_array($user->role, ['admin', 'coach', 'instructor'], true);
+        return $user->organization_id !== null && in_array($user->role, ['admin', 'coach'], true);
     }
 
     public function view(User $user, Event $event): bool
@@ -23,7 +23,7 @@ class EventPolicy
             return $this->sameOrganization($user, $event);
         }
 
-        if (in_array($user->role, ['coach', 'instructor'], true)) {
+        if (in_array($user->role, ['coach'], true)) {
             if (!$this->sameOrganization($user, $event)) {
                 return false;
             }
@@ -38,7 +38,7 @@ class EventPolicy
 
     public function create(User $user): bool
     {
-        return $user->organization_id !== null && in_array($user->role, ['admin', 'coach', 'instructor'], true);
+        return $user->organization_id !== null && in_array($user->role, ['admin', 'coach'], true);
     }
 
     public function update(User $user, Event $event): bool

@@ -12,7 +12,7 @@ class AcademicPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->organization_id !== null && in_array($user->role, ['admin', 'coach', 'instructor', 'student'], true);
+        return $user->organization_id !== null && in_array($user->role, ['admin', 'coach', 'student'], true);
     }
 
     /**

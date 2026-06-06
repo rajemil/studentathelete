@@ -47,7 +47,7 @@ class UpdateUserAction
         }
 
         $updateData = [
-            'name' => $data['name'],
+            'name' => mb_strtoupper($data['name']),
             'email' => $data['email'],
             'role' => $data['role'],
         ];
@@ -64,7 +64,7 @@ class UpdateUserAction
         $profile->fill([
             'birthdate' => $birthdate?->toDateString(),
             'gender' => $data['gender'] ?? null,
-            'address' => $data['address'] ?? null,
+            'address' => isset($data['address']) ? mb_strtoupper($data['address']) : null,
             'profession' => $data['profession'] ?? null,
             'field_expertise' => $data['field_expertise'] ?? null,
             'achievements' => $data['achievements'] ?? null,
@@ -91,11 +91,11 @@ class UpdateUserAction
             ->unique()
             ->values();
 
-        // Enforce: one faculty (coach/instructor) per sport (allow keeping already-owned sports).
+        // Enforce: one faculty (coach) per sport (allow keeping already-owned sports).
         $alreadyAssignedToOther = DB::table('sport_user')
             ->join('users', 'sport_user.user_id', '=', 'users.id')
             ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach', 'instructor'])
+            ->whereIn('users.role', ['coach'])
             ->where('sport_user.user_id', '!=', $user->id)
             ->whereIn('sport_user.sport_id', $desiredSportIds->all())
             ->exists();
@@ -125,22 +125,7 @@ class UpdateUserAction
         // Sync coach assignments
         $this->assignCoachAction->execute($user, $desiredTeamIds, $allowedTeamIds);
 
-        // Instructor assignment exclusivity (one instructor per sport)
-        if ($data['role'] === 'instructor') {
-            Sport::query()
-                ->where('organization_id', $orgId)
-                ->where('instructor_user_id', $user->id)
-                ->whereNotIn('id', $desiredSportIds->all())
-                ->update(['instructor_user_id' => null]);
 
-            Sport::query()
-                ->where('organization_id', $orgId)
-                ->whereIn('id', $desiredSportIds->all())
-                ->where(function ($q) use ($user) {
-                    $q->whereNull('instructor_user_id')->orWhere('instructor_user_id', $user->id);
-                })
-                ->update(['instructor_user_id' => $user->id]);
-        }
 
         activity()
             ->performedOn($user)

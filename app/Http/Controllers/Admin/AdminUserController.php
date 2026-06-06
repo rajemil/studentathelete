@@ -29,7 +29,7 @@ class AdminUserController extends Controller
 
         $users = User::query()
             ->where('organization_id', $orgId)
-            ->whereIn('role', ['coach', 'instructor'])
+            ->whereIn('role', ['coach'])
             ->with([
                 'sports',
                 'profile',
@@ -41,7 +41,7 @@ class AdminUserController extends Controller
 
         $sports = Sport::query()
             ->where('organization_id', $orgId)
-            ->with('instructor')
+
             ->with(['teams' => fn ($q) => $q->orderBy('name')])
             ->orderBy('name')
             ->get();
@@ -50,7 +50,7 @@ class AdminUserController extends Controller
         $sportFacultyAssignments = DB::table('sport_user')
             ->join('users', 'sport_user.user_id', '=', 'users.id')
             ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach', 'instructor'])
+            ->whereIn('users.role', ['coach'])
             ->select('sport_user.sport_id', 'users.id as user_id', 'users.name', 'users.email', 'users.role')
             ->orderBy('users.created_at')
             ->get()
@@ -78,7 +78,7 @@ class AdminUserController extends Controller
             RegistrationRules::nameFields(),
             [
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-                'role' => ['required', 'string', 'in:coach,instructor'],
+                'role' => ['required', 'string', 'in:coach'],
             ],
             RegistrationRules::passwordRequired(),
             RegistrationRules::facultyProfileFields(true),
@@ -101,7 +101,7 @@ class AdminUserController extends Controller
             'user_id' => $user->id,
             'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
             'gender' => RegistrationRules::normalizeGender($validated['gender']),
-            'address' => $validated['address'],
+            'address' => mb_strtoupper($validated['address']),
             'profession' => $validated['profession'],
             'field_expertise' => $validated['field_expertise'],
             'achievements' => $validated['achievements'] ?? null,
@@ -128,11 +128,11 @@ class AdminUserController extends Controller
             ->unique()
             ->values();
 
-        // Enforce: one faculty (coach/instructor) per sport.
+        // Enforce: one faculty (coach) per sport.
         $alreadyAssignedSportIds = DB::table('sport_user')
             ->join('users', 'sport_user.user_id', '=', 'users.id')
             ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach', 'instructor'])
+            ->whereIn('users.role', ['coach'])
             ->whereIn('sport_user.sport_id', $desiredSportIds->all())
             ->distinct()
             ->pluck('sport_user.sport_id')
@@ -166,13 +166,7 @@ class AdminUserController extends Controller
             ]);
         }
 
-        if ($user->role === 'instructor') {
-            Sport::query()
-                ->where('organization_id', $orgId)
-                ->whereIn('id', $desiredSportIds)
-                ->whereNull('instructor_user_id')
-                ->update(['instructor_user_id' => $user->id]);
-        }
+
 
         activity()
             ->performedOn($user)
@@ -218,7 +212,7 @@ class AdminUserController extends Controller
             RegistrationRules::nameFields(),
             [
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-                'role' => ['required', 'string', 'in:coach,instructor'],
+                'role' => ['required', 'string', 'in:coach'],
             ],
             RegistrationRules::passwordOptional(),
             RegistrationRules::facultyProfileFields(true),
@@ -243,7 +237,7 @@ class AdminUserController extends Controller
         $profile->fill([
             'birthdate' => CarbonImmutable::parse($validated['birthdate'])->toDateString(),
             'gender' => RegistrationRules::normalizeGender($validated['gender']),
-            'address' => $validated['address'],
+            'address' => mb_strtoupper($validated['address']),
             'profession' => $validated['profession'],
             'field_expertise' => $validated['field_expertise'],
             'achievements' => $validated['achievements'] ?? null,
@@ -271,11 +265,11 @@ class AdminUserController extends Controller
             ->unique()
             ->values();
 
-        // Enforce: one faculty (coach/instructor) per sport (allow keeping already-owned sports).
+        // Enforce: one faculty (coach) per sport (allow keeping already-owned sports).
         $alreadyAssignedToOther = DB::table('sport_user')
             ->join('users', 'sport_user.user_id', '=', 'users.id')
             ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach', 'instructor'])
+            ->whereIn('users.role', ['coach'])
             ->where('sport_user.user_id', '!=', $user->id)
             ->whereIn('sport_user.sport_id', $desiredSportIds->all())
             ->exists();
@@ -330,22 +324,7 @@ class AdminUserController extends Controller
             ]);
         }
 
-        // Instructor assignment exclusivity (one instructor per sport)
-        if ($validated['role'] === 'instructor') {
-            Sport::query()
-                ->where('organization_id', $orgId)
-                ->where('instructor_user_id', $user->id)
-                ->whereNotIn('id', $desiredSportIds->all())
-                ->update(['instructor_user_id' => null]);
 
-            Sport::query()
-                ->where('organization_id', $orgId)
-                ->whereIn('id', $desiredSportIds->all())
-                ->where(function ($q) use ($user) {
-                    $q->whereNull('instructor_user_id')->orWhere('instructor_user_id', $user->id);
-                })
-                ->update(['instructor_user_id' => $user->id]);
-        }
 
         activity()
             ->performedOn($user)
@@ -383,7 +362,7 @@ class AdminUserController extends Controller
     private function ensureFaculty(User $user): void
     {
         abort_unless(
-            in_array($user->role, ['coach', 'instructor'], true)
+            in_array($user->role, ['coach'], true)
             && (int) $user->organization_id === (int) auth()->user()->organization_id,
             404
         );

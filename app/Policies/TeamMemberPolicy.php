@@ -12,7 +12,7 @@ class TeamMemberPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'coach', 'instructor']);
+        return in_array($user->role, ['admin', 'coach']);
     }
 
     public function view(User $user, TeamMember $teamMember): bool

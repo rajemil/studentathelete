@@ -27,7 +27,7 @@ class ParticipationLogPolicy
             return true;
         }
 
-        if (in_array($user->role, ['coach', 'instructor'], true)) {
+        if (in_array($user->role, ['coach'], true)) {
             $athlete = $log->user;
             if (! $athlete) {
                 return false;

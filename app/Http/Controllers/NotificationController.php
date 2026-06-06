@@ -18,7 +18,7 @@ class NotificationController extends Controller
         }
 
         // Self-healing: If user is staff, ensure they have notifications for all current pending applications in their sports
-        if (in_array($user->role, ['coach', 'instructor', 'admin'], true)) {
+        if (in_array($user->role, ['coach', 'admin'], true)) {
             $this->ensurePendingApplicationNotifications($user);
         }
 

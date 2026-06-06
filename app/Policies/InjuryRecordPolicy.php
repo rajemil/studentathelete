@@ -11,7 +11,7 @@ class InjuryRecordPolicy
     public function viewAny(User $user): bool
     {
         return $user->organization_id !== null
-            && in_array($user->role, ['admin', 'coach', 'instructor'], true);
+            && in_array($user->role, ['admin', 'coach'], true);
     }
 
     public function view(User $user, InjuryRecord $record): bool
@@ -24,7 +24,7 @@ class InjuryRecordPolicy
             return true;
         }
 
-        if (in_array($user->role, ['coach', 'instructor'], true)) {
+        if (in_array($user->role, ['coach'], true)) {
             $athlete = $record->athlete;
             if (! $athlete) {
                 return false;

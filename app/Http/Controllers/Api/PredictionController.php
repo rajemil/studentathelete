@@ -217,7 +217,7 @@ class PredictionController extends Controller
             return;
         }
 
-        if (! in_array($role, ['coach', 'instructor'], true)) {
+        if (! in_array($role, ['coach'], true)) {
             abort(403);
         }
 

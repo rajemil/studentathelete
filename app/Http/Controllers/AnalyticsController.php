@@ -26,7 +26,7 @@ class AnalyticsController extends Controller
             ->orderBy('name')
             ->limit(500);
 
-        if (in_array($user->role, ['coach', 'instructor'], true)) {
+        if (in_array($user->role, ['coach'], true)) {
             $sportIds = Team::query()
                 ->whereIn('id', CoachedTeams::teamIds($user))
                 ->pluck('sport_id')
