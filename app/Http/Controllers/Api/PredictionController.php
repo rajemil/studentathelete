@@ -161,11 +161,7 @@ class PredictionController extends Controller
     {
         $role = $actor->role ?? 'student';
 
-        if ($role === 'admin') {
-            return ['nullable', 'integer', 'exists:sports,id'];
-        }
-
-        return ['required', 'integer', 'exists:sports,id'];
+        return ['nullable', 'integer', 'exists:sports,id'];
     }
 
     private function resolveSportForActor(User $actor, ?int $sportId): ?Sport

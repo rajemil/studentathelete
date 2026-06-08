@@ -114,9 +114,10 @@ function initAnalyticsUI() {
 
     async function runAthletePrediction(withRecommendations = false) {
         const submitBtn = athleteForm?.querySelector('button[type="submit"]');
-        const userId = Number($('#athlete_user_id', root).value);
-        const sportId = $('#athlete_sport_id', root).value ? Number($('#athlete_sport_id', root).value) : null;
-        const horizonDays = Number($('#horizon_days', root).value || 14);
+        const userId = Number($('#athlete_user_id', root)?.value);
+        const sportEl = $('#athlete_sport_id', root);
+        const sportId = sportEl && sportEl.value ? Number(sportEl.value) : null;
+        const horizonDays = Number($('#horizon_days', root)?.value || 14);
 
         if (!userId) throw new Error('Select an athlete.');
 
@@ -211,7 +212,8 @@ function initAnalyticsUI() {
         e.preventDefault();
         try {
             const btn = wpForm.querySelector('button[type="submit"]');
-            const sportId = $('#wp_sport_id', root).value ? Number($('#wp_sport_id', root).value) : null;
+            const sportEl = $('#wp_sport_id', root);
+            const sportId = sportEl && sportEl.value ? Number(sportEl.value) : null;
             const teamA = selectedValues($('#team_a', root));
             const teamB = selectedValues($('#team_b', root));
 
@@ -251,7 +253,8 @@ function initAnalyticsUI() {
         e.preventDefault();
         try {
             const btn = luForm.querySelector('button[type="submit"]');
-            const sportId = $('#lu_sport_id', root).value ? Number($('#lu_sport_id', root).value) : null;
+            const sportEl = $('#lu_sport_id', root);
+            const sportId = sportEl && sportEl.value ? Number(sportEl.value) : null;
             const candidates = selectedValues($('#lu_candidates', root));
             const lineupSize = Number($('#lineup_size', root).value || 5);
 

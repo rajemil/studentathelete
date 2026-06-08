@@ -21,6 +21,11 @@ class StaffAiRecommendationsHubController extends Controller
             ->unique()
             ->filter();
 
+        // Also include the coach's directly assigned sport (set by admin via users.sport_id)
+        if ($user->sport_id) {
+            $sportIds = $sportIds->push($user->sport_id)->unique();
+        }
+
         $sports = Sport::query()
             ->where('organization_id', $user->organization_id)
             ->whereIn('id', $sportIds)
