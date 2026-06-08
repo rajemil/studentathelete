@@ -153,7 +153,11 @@
                     <tbody class="divide-y divide-gray-200 dark:divide-white/10">
                         @foreach($users as $u)
                             @php
-                                $assignedSports = collect($u->sports ?? [])
+                                // Combine sport_user pivot sports + the direct sport_id relationship
+                                $pivotSports = collect($u->sports ?? []);
+                                $directSport = $u->sport;
+                                $assignedSports = $pivotSports
+                                    ->when($directSport, fn ($c) => $c->push($directSport))
                                     ->filter()
                                     ->unique('id')
                                     ->values();
@@ -337,7 +341,7 @@
                                                     @foreach($sports as $sport)
                                                         @php
                                                             $facultyAssigned = $sportFacultyAssignments[$sport->id] ?? null;
-                                                            $isTakenByOtherFaculty = $facultyAssigned && (int) $facultyAssigned->user_id !== (int) $u->id;
+                                                            $isTakenByOtherFaculty = $facultyAssigned && (int) $facultyAssigned->id !== (int) $u->id;
                                                             $checked = in_array((int) $sport->id, old('sport_ids', $assignedSportIds), true);
                                                         @endphp
                                                         <label class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/60 dark:bg-gray-900/40 p-4 flex items-start gap-3 {{ $isTakenByOtherFaculty ? 'opacity-60' : '' }}">

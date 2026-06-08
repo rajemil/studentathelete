@@ -44,6 +44,18 @@ class CoachStudentController extends Controller
             'approval_status' => 'approved',
         ]);
 
+        // Bust dashboard caches for coaches assigned to any sport the student belongs to.
+        $studentSportIds = $user->sports()->pluck('sports.id');
+        if ($studentSportIds->isNotEmpty()) {
+            $coachIds = User::query()
+                ->where('role', 'coach')
+                ->whereIn('sport_id', $studentSportIds)
+                ->pluck('id');
+            foreach ($coachIds as $coachId) {
+                \App\Services\Analytics\AnalyticsCache::forgetUserDashboard((int) $coachId);
+            }
+        }
+
         return back()->with('status', 'Student approved successfully.');
     }
 

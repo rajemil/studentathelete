@@ -31,6 +31,7 @@ class AdminUserController extends Controller
             ->where('organization_id', $orgId)
             ->whereIn('role', ['coach'])
             ->with([
+                'sport',
                 'sports',
                 'profile',
                 'coachAssignments.team.sport',
@@ -47,15 +48,13 @@ class AdminUserController extends Controller
             ->get();
 
         // Used to disable sports that are already assigned to some faculty.
-        $sportFacultyAssignments = DB::table('sport_user')
-            ->join('users', 'sport_user.user_id', '=', 'users.id')
-            ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach'])
-            ->select('sport_user.sport_id', 'users.id as user_id', 'users.name', 'users.email', 'users.role')
-            ->orderBy('users.created_at')
+        $sportFacultyAssignments = User::query()
+            ->where('organization_id', $orgId)
+            ->whereIn('role', ['coach'])
+            ->whereNotNull('sport_id')
+            ->select('id', 'name', 'email', 'role', 'sport_id')
             ->get()
-            ->groupBy('sport_id')
-            ->map(fn ($rows) => $rows->first())
+            ->keyBy('sport_id')
             ->all();
 
         return view('admin.users.index', compact('users', 'sports', 'sportFacultyAssignments'));
@@ -89,8 +88,38 @@ class AdminUserController extends Controller
             ],
         ));
 
+        $allowedSportIds = Sport::query()
+            ->where('organization_id', $orgId)
+            ->pluck('id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
+        $desiredSportIds = collect($validated['sport_ids'] ?? [])
+            ->map(fn ($v) => (int) $v)
+            ->filter(fn (int $id) => in_array($id, $allowedSportIds, true))
+            ->unique()
+            ->values();
+
+        // Enforce: one faculty (coach) per sport.
+        $alreadyAssignedSportIds = DB::table('users')
+            ->where('organization_id', $orgId)
+            ->whereIn('role', ['coach'])
+            ->whereNotNull('sport_id')
+            ->whereIn('sport_id', $desiredSportIds->all())
+            ->distinct()
+            ->pluck('sport_id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
+        if (! empty($alreadyAssignedSportIds)) {
+            return back()->withErrors([
+                'sport_ids' => 'One or more selected sports are already assigned to another faculty member.',
+            ])->withInput();
+        }
+
         $user = User::query()->create([
             'organization_id' => $orgId,
+            'sport_id' => $desiredSportIds->first(),
             'name' => PersonName::combine($validated['first_name'], $validated['last_name']),
             'email' => $validated['email'],
             'role' => $validated['role'],
@@ -114,35 +143,6 @@ class AdminUserController extends Controller
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('faculty-photos', 'public');
             $profile->update(['photo_path' => $path]);
-        }
-
-        $allowedSportIds = Sport::query()
-            ->where('organization_id', $orgId)
-            ->pluck('id')
-            ->map(fn ($v) => (int) $v)
-            ->all();
-
-        $desiredSportIds = collect($validated['sport_ids'] ?? [])
-            ->map(fn ($v) => (int) $v)
-            ->filter(fn (int $id) => in_array($id, $allowedSportIds, true))
-            ->unique()
-            ->values();
-
-        // Enforce: one faculty (coach) per sport.
-        $alreadyAssignedSportIds = DB::table('sport_user')
-            ->join('users', 'sport_user.user_id', '=', 'users.id')
-            ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach'])
-            ->whereIn('sport_user.sport_id', $desiredSportIds->all())
-            ->distinct()
-            ->pluck('sport_user.sport_id')
-            ->map(fn ($v) => (int) $v)
-            ->all();
-
-        if (! empty($alreadyAssignedSportIds)) {
-            return back()->withErrors([
-                'sport_ids' => 'One or more selected sports are already assigned to another faculty member.',
-            ])->withInput();
         }
 
         // Persist sport assignment (even if the sport currently has no teams).
@@ -266,12 +266,12 @@ class AdminUserController extends Controller
             ->values();
 
         // Enforce: one faculty (coach) per sport (allow keeping already-owned sports).
-        $alreadyAssignedToOther = DB::table('sport_user')
-            ->join('users', 'sport_user.user_id', '=', 'users.id')
-            ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach'])
-            ->where('sport_user.user_id', '!=', $user->id)
-            ->whereIn('sport_user.sport_id', $desiredSportIds->all())
+        $alreadyAssignedToOther = DB::table('users')
+            ->where('organization_id', $orgId)
+            ->whereIn('role', ['coach'])
+            ->whereNotNull('sport_id')
+            ->where('id', '!=', $user->id)
+            ->whereIn('sport_id', $desiredSportIds->all())
             ->exists();
 
         if ($alreadyAssignedToOther) {
@@ -279,6 +279,9 @@ class AdminUserController extends Controller
                 'sport_ids' => 'One or more selected sports are already assigned to another faculty member.',
             ])->withInput();
         }
+
+        // Update the user's primary sport_id
+        $user->update(['sport_id' => $desiredSportIds->first()]);
 
         // Keep the faculty's sport assignments in sync.
         $user->sports()->sync($desiredSportIds->all());

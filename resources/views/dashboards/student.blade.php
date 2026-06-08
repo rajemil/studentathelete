@@ -26,20 +26,8 @@
                 </div>
             @endif
 
-            @if(($sportApply['org_sports_count'] ?? 0) > 0)
-                <div id="student-sport-applications" class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 shadow-sm p-5 scroll-mt-24">
-                    <div class="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Sports you want</div>
-                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Apply from your organization's sport list. Each sport can define age, height, and gender rules; you will see whether you meet them before staff reviews your request.</p>
-                            @if(($sportApply['pending_applications'] ?? 0) > 0)
-                                <p class="mt-2 text-sm font-medium text-amber-800 dark:text-amber-200">{{ $sportApply['pending_applications'] }} pending application(s) awaiting staff.</p>
-                            @endif
-                        </div>
-                        <a href="{{ route('student.sports.index') }}" class="inline-flex shrink-0 items-center rounded-xl bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] px-4 py-2 text-sm font-semibold text-white shadow-sm">Browse &amp; apply</a>
-                    </div>
-                </div>
-            @endif
+
+
 
             <div id="sport-activity-summary" class="grid grid-cols-1 sm:grid-cols-3 gap-4 scroll-mt-24">
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">

@@ -9,7 +9,6 @@ use App\Models\Event;
 use App\Models\Insight;
 use App\Models\PerformanceScore;
 use App\Models\Sport;
-use App\Models\SportApplication;
 use App\Models\TrainingRecommendation;
 use App\Services\AI\AiManager;
 use App\Services\InjuryRisk\InjuryRiskService;
@@ -119,14 +118,8 @@ class StudentDashboardController extends Controller
             'injury_risk' => $user->profile?->injury_risk,
         ];
 
-        $sportApply = [
-            'org_sports_count' => (int) Sport::query()->where('organization_id', $user->organization_id)->count(),
-            'pending_applications' => (int) SportApplication::query()
-                ->where('user_id', $user->id)
-                ->where('status', 'pending')
-                ->count(),
-        ];
 
-        return view('dashboards.student', compact('kpi', 'recentScores', 'upcomingEvents', 'recommendations', 'chart', 'insights', 'risk', 'sportApply'));
+
+        return view('dashboards.student', compact('kpi', 'recentScores', 'upcomingEvents', 'recommendations', 'chart', 'insights', 'risk'));
     }
 }
