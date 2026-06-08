@@ -37,47 +37,45 @@ trait BuildsCoachStyleDashboard
 
         $insightsService->ensureGenerated($now);
 
-        $teamIds = CoachedTeams::teamIds($user);
+        $athleteIds = CoachedTeams::coachedStudentIds($user);
 
-        $teams = Team::query()
-            ->whereIn('id', $teamIds)
-            ->with(['sport', 'students' => fn ($q) => $q->limit(8)])
+        $athletes = User::query()
+            ->whereIn('id', $athleteIds)
+            ->with(['profile'])
             ->orderBy('name')
             ->get();
 
         $kpi = [
-            'teams' => (int) $teamIds->count(),
-            'athletes' => (int) DB::table('team_memberships')->whereIn('team_id', $teamIds)->distinct('user_id')->count('user_id'),
-            'events_upcoming' => Event::query()->whereIn('team_id', $teamIds)->whereNotNull('starts_at')->where('starts_at', '>=', $now)->count(),
+            'athletes' => $athleteIds->count(),
+            'events_upcoming' => Event::query()
+                ->where('sport_id', $user->sport_id)
+                ->whereNotNull('starts_at')
+                ->where('starts_at', '>=', $now)
+                ->count(),
         ];
 
         $recentEvents = Event::query()
-            ->whereIn('team_id', $teamIds)
+            ->where('sport_id', $user->sport_id)
             ->orderByDesc('starts_at')
             ->limit(5)
             ->get();
 
-        $teamPerformance = PerformanceScore::query()
-            ->whereIn('team_id', $teamIds)
+        $sportPerformance = PerformanceScore::query()
+            ->where('sport_id', $user->sport_id)
             ->whereNotNull('scored_on')
             ->where('scored_on', '>=', $now->subDays(30)->toDateString())
             ->orderBy('scored_on')
-            ->get(['team_id', 'scored_on', 'score'])
+            ->get(['scored_on', 'score'])
             ->groupBy(fn ($row) => (string) $row->scored_on)
             ->map(fn ($rows) => round($rows->avg('score'), 2))
             ->take(30);
 
         $chart = [
             'teamPerformance' => [
-                'labels' => $teamPerformance->keys()->values(),
-                'values' => $teamPerformance->values(),
+                'labels' => $sportPerformance->keys()->values(),
+                'values' => $sportPerformance->values(),
             ],
         ];
-
-        $athleteIds = DB::table('team_memberships')
-            ->whereIn('team_id', $teamIds)
-            ->distinct('user_id')
-            ->pluck('user_id');
 
         $orgId = (int) $user->organization_id;
 
@@ -101,6 +99,6 @@ trait BuildsCoachStyleDashboard
             ->limit(6)
             ->get();
 
-        return compact('kpi', 'teams', 'recentEvents', 'chart', 'insights', 'riskyAthletes');
+        return compact('kpi', 'athletes', 'recentEvents', 'chart', 'insights', 'riskyAthletes');
     }
 }

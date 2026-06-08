@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'approved' => \App\Http\Middleware\EnsureStudentApproved::class,
         ]);
 
+        $middleware->api(prepend: [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ]);
+
         $middleware->web(append: [
             AddLinkHeadersForPreloadedAssets::class,
         ]);

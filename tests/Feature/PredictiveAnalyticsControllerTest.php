@@ -16,27 +16,18 @@ class PredictiveAnalyticsControllerTest extends TestCase
     public function test_thesis_aligned_prediction_routes_respond(): void
     {
         $orgId = Organization::defaultId();
-        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $orgId]);
-        $studentA = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
-        $studentB = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
-
         $sport = Sport::query()->create([
             'organization_id' => $orgId,
             'name' => 'Volleyball',
             'slug' => 'volleyball-predict',
         ]);
 
-        $team = Team::query()->create([
-            'organization_id' => $orgId,
-            'sport_id' => $sport->id,
-            'name' => 'Varsity VB',
-            'primary_coach_id' => $coach->id,
-        ]);
+        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $orgId, 'sport_id' => $sport->id]);
+        $studentA = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
+        $studentB = User::factory()->create(['role' => 'student', 'organization_id' => $orgId]);
 
-        $team->students()->attach([
-            $studentA->id => ['rank' => 1],
-            $studentB->id => ['rank' => 2],
-        ]);
+        $studentA->sports()->attach($sport->id);
+        $studentB->sports()->attach($sport->id);
 
         $athlete = $this->actingAs($coach)->getJson('/api/predictions/athlete?user_id='.$studentA->id.'&sport_id='.$sport->id);
         $athlete->assertOk()->assertJsonStructure([

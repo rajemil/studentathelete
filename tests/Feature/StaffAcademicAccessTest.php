@@ -17,26 +17,16 @@ class StaffAcademicAccessTest extends TestCase
     {
         $org = Organization::query()->firstOrFail();
 
-        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $org->id]);
-        $student = User::factory()->create(['role' => 'student', 'organization_id' => $org->id]);
-
         $sport = Sport::query()->create([
             'name' => 'Test Sport',
             'slug' => 'test-sport-'.uniqid(),
             'organization_id' => $org->id,
         ]);
 
-        $team = Team::query()->create([
-            'name' => 'Team A',
-            'sport_id' => $sport->id,
-            'organization_id' => $org->id,
-            'primary_coach_id' => $coach->id,
-        ]);
+        $coach = User::factory()->create(['role' => 'coach', 'organization_id' => $org->id, 'sport_id' => $sport->id]);
+        $student = User::factory()->create(['role' => 'student', 'organization_id' => $org->id]);
 
-        $student->teams()->attach($team->id, [
-            'rank' => 1,
-            'joined_on' => now()->toDateString(),
-        ]);
+        $student->sports()->attach($sport->id);
 
         $response = $this->actingAs($coach)->get(route('staff.academics.index'));
 

@@ -26,6 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'organization_id',
+        'sport_id',
         'name',
         'email',
         'role',
@@ -68,6 +69,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function profile(): HasOne
     {
         return $this->hasOne(Profile::class);
+    }
+
+    public function sport(): BelongsTo
+    {
+        return $this->belongsTo(Sport::class);
     }
 
     /**

@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\PredictiveAnalyticsController;
 use App\Http\Controllers\Api\LandingDataController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'org'])->group(function () {
+Route::middleware(['auth:sanctum', 'org'])->group(function () {
     Route::prefix('predictions')->group(function () {
         Route::get('/athlete', [PredictiveAnalyticsController::class, 'athletePrediction']);
         Route::get('/team', [PredictiveAnalyticsController::class, 'teamPrediction'])

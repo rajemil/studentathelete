@@ -28,17 +28,16 @@ final class CoachedTeams
     }
 
     /**
-     * Student user IDs on teams coached by the user (for this organization).
+     * Student user IDs in the sport coached by the user (for this organization).
      */
     public static function coachedStudentIds(User $user): Collection
     {
-        $teamIds = self::teamIds($user);
-        if ($teamIds->isEmpty()) {
+        if (!$user->sport_id) {
             return collect();
         }
 
-        return DB::table('team_memberships')
-            ->whereIn('team_id', $teamIds)
+        return DB::table('sport_user')
+            ->where('sport_id', $user->sport_id)
             ->distinct()
             ->pluck('user_id');
     }

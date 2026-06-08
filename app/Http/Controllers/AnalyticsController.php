@@ -27,23 +27,20 @@ class AnalyticsController extends Controller
             ->limit(500);
 
         if (in_array($user->role, ['coach'], true)) {
-            $sportIds = Team::query()
-                ->whereIn('id', CoachedTeams::teamIds($user))
-                ->pluck('sport_id')
-                ->unique()
-                ->filter();
+            $sportId = $user->sport_id;
 
-            if ($sportIds->isEmpty()) {
+            if (!$sportId) {
                 $sportsQuery->whereRaw('1 = 0');
-            } else {
-                $sportsQuery->whereIn('id', $sportIds);
-            }
-
-            $studentIds = CoachedTeams::coachedStudentIds($user);
-            if ($studentIds->isEmpty()) {
                 $studentsQuery->whereRaw('1 = 0');
             } else {
-                $studentsQuery->whereIn('id', $studentIds);
+                $sportsQuery->where('id', $sportId);
+
+                $studentIds = CoachedTeams::coachedStudentIds($user);
+                if ($studentIds->isEmpty()) {
+                    $studentsQuery->whereRaw('1 = 0');
+                } else {
+                    $studentsQuery->whereIn('id', $studentIds);
+                }
             }
         }
 

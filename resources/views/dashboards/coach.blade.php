@@ -7,11 +7,7 @@
     </x-slot>
 
     <div class="space-y-8">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">
-                    <div class="text-sm text-gray-500 dark:text-gray-400">Teams</div>
-                    <div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{{ $kpi['teams'] }}</div>
-                </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 hover:shadow-md transition">
                     <div class="text-sm text-gray-500 dark:text-gray-400">Student athletes</div>
                     <div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{{ $kpi['athletes'] }}</div>
@@ -24,7 +20,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-5 lg:col-span-3">
-                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Team performance (last 30 days)</div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Sport performance (last 30 days)</div>
                     <div class="mt-4 h-72">
                         <canvas
                             class="w-full"
@@ -91,34 +87,18 @@
 
             <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm">
                 <div class="border-b border-gray-200/60 dark:border-white/10 px-5 py-4">
-                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Teams and top-ranked student athletes</div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Your student athletes</div>
                 </div>
-                <div class="p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    @forelse($teams as $team)
-                        <div class="rounded-2xl border border-gray-200/60 dark:border-white/10 p-4">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $team->name }}</div>
-                                    <div class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ $team->sport?->name ?? 'General' }}</div>
-                                </div>
-                            </div>
-
-                            <div class="mt-3">
-                                <div class="text-xs font-medium text-gray-500 dark:text-gray-400">Top athletes (by rank)</div>
-                                <div class="mt-2 space-y-2">
-                                    @forelse($team->students as $student)
-                                        <div class="flex items-center justify-between rounded-2xl bg-gray-50 dark:bg-gray-900/40 px-3 py-2">
-                                            <div class="text-sm text-gray-900 dark:text-gray-100">{{ $student->name }}</div>
-                                            <div class="text-xs text-gray-600 dark:text-gray-400">Rank #{{ $student->pivot->rank }}</div>
-                                        </div>
-                                    @empty
-                                        <div class="text-sm text-gray-600 dark:text-gray-400">No athletes assigned.</div>
-                                    @endforelse
-                                </div>
+                <div class="p-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    @forelse($athletes as $student)
+                        <div class="flex items-center justify-between rounded-2xl bg-gray-50 dark:bg-gray-900/40 px-4 py-3 border border-gray-200/60 dark:border-white/10">
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $student->name }}</div>
+                                <div class="mt-1 text-xs text-gray-600 dark:text-gray-400">Fatigue: {{ $student->profile->fatigue_score ?? '—' }}</div>
                             </div>
                         </div>
                     @empty
-                        <div class="text-sm text-gray-600 dark:text-gray-400">No teams assigned yet.</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 col-span-3">No athletes assigned yet.</div>
                     @endforelse
                 </div>
             </div>

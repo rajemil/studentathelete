@@ -24,7 +24,7 @@ class TeamMemberSeeder extends Seeder
             ],
             [
                 'name'        => 'Kurt Brian Tacdoro',
-                'role'        => 'Presenter, Documentator',
+                'role'        => 'Documentator, Presenter',
                 'description' => "Believes that life's greatest values are found in clarity and expression—striving to live intentionally while articulating a vision for a purposeful future.",
             ],
             [
@@ -33,6 +33,12 @@ class TeamMemberSeeder extends Seeder
                 'description' => 'Focused on balancing curiosity with execution, viewing life as an ongoing experiment in creating harmony between personal passion and practical contribution.',
             ],
         ];
+
+        // Ensure only these members exist
+        $names = collect($members)->pluck('name')->toArray();
+        TeamMember::where('organization_id', $organization->id)
+            ->whereNotIn('name', $names)
+            ->delete();
 
         foreach ($members as $member) {
             TeamMember::updateOrCreate(

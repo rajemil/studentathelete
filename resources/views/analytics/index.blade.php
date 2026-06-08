@@ -23,6 +23,7 @@
                         </select>
                     </div>
 
+                    @if(auth()->user()->role === 'admin')
                     <div>
                         <x-input-label for="athlete_sport_id" value="Sport (optional)" />
                         <select id="athlete_sport_id" name="sport_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
@@ -32,6 +33,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @endif
 
                     <div>
                         <x-input-label for="horizon_days" value="Horizon (days)" />
@@ -82,6 +84,7 @@
             <div class="rounded-xl bg-white dark:bg-gray-800 shadow p-6">
                 <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Team win probability</div>
                 <form class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4 items-end" data-analytics="winprob-form">
+                    @if(auth()->user()->role === 'admin')
                     <div>
                         <x-input-label for="wp_sport_id" value="Sport (optional)" />
                         <select id="wp_sport_id" name="sport_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
@@ -91,6 +94,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @endif
                     <div class="lg:col-span-2">
                         <x-input-label for="team_a" value="Team A (students)" />
                         <select id="team_a" name="team_a_user_ids[]" multiple size="6" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
@@ -128,6 +132,7 @@
             <div class="rounded-xl bg-white dark:bg-gray-800 shadow p-6">
                 <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Strongest lineup</div>
                 <form class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4 items-end" data-analytics="lineup-form">
+                    @if(auth()->user()->role === 'admin')
                     <div>
                         <x-input-label for="lu_sport_id" value="Sport (optional)" />
                         <select id="lu_sport_id" name="sport_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
@@ -137,6 +142,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @endif
                     <div class="lg:col-span-3">
                         <x-input-label for="lu_candidates" value="Candidates (students)" />
                         <select id="lu_candidates" name="candidate_user_ids[]" multiple size="6" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">

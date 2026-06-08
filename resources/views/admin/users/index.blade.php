@@ -107,13 +107,11 @@
 
                     <div>
                         <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Sports assignment</div>
-                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400" x-text="role === 'instructor' ? 'Select sports to teach (one instructor per sport).' : 'Select sports to coach.'"></div>
+                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Select sports to coach.</div>
 
                         <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                             @foreach($sports as $sport)
                                 @php
-                                    $assignedInstructorName = $sport->instructor?->name;
-                                    $assignedInstructorEmail = $sport->instructor?->email;
                                     $facultyAssigned = $sportFacultyAssignments[$sport->id] ?? null;
                                     $isTaken = $facultyAssigned !== null;
                                 @endphp
@@ -126,20 +124,7 @@
                                                 Assigned to {{ $facultyAssigned->name }} ({{ $facultyAssigned->role }})
                                             </span>
                                         @endif
-                                        <span class="block text-xs text-gray-500 dark:text-gray-400" x-show="role === 'instructor'">
-                                            @if($assignedInstructorName)
-                                                Instructor: {{ $assignedInstructorName }} ({{ $assignedInstructorEmail }})
-                                            @else
-                                                Available (no instructor yet)
-                                            @endif
-                                        </span>
-                                        <span class="block text-xs text-gray-500 dark:text-gray-400" x-show="role !== 'instructor'">
-                                            @if($assignedInstructorName)
-                                                Instructor: {{ $assignedInstructorName }}
-                                            @else
-                                                Active sport
-                                            @endif
-                                        </span>
+                                        <span class="block text-xs text-gray-500 dark:text-gray-400">Active sport</span>
                                     </span>
                                 </label>
                             @endforeach
@@ -316,7 +301,7 @@
                                                         <div>
                                                             <x-input-label value="Role" />
                                                             <select name="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
-                                                                @foreach(['coach','instructor'] as $r)
+                                                                @foreach(['coach'] as $r)
                                                                     <option value="{{ $r }}" @selected(old('role', $u->role) === $r)>{{ ucfirst($r) }}</option>
                                                                 @endforeach
                                                             </select>
@@ -344,19 +329,15 @@
                                             <div>
                                                 <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Sports assignment</div>
                                                 <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                                    Select which sports this faculty member will coach/teach.
+                                                    Select which sports this faculty member will coach.
                                                     Sports already assigned to another faculty member are disabled.
                                                 </div>
 
                                                 <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     @foreach($sports as $sport)
                                                         @php
-                                                            $assignedInstructorName = $sport->instructor?->name;
-                                                            $assignedInstructorEmail = $sport->instructor?->email;
                                                             $facultyAssigned = $sportFacultyAssignments[$sport->id] ?? null;
                                                             $isTakenByOtherFaculty = $facultyAssigned && (int) $facultyAssigned->user_id !== (int) $u->id;
-
-                                                            $isAssignedToOtherInstructor = $sport->instructor_user_id && (int) $sport->instructor_user_id !== (int) $u->id;
                                                             $checked = in_array((int) $sport->id, old('sport_ids', $assignedSportIds), true);
                                                         @endphp
                                                         <label class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/60 dark:bg-gray-900/40 p-4 flex items-start gap-3 {{ $isTakenByOtherFaculty ? 'opacity-60' : '' }}">
@@ -366,7 +347,7 @@
                                                                 value="{{ $sport->id }}"
                                                                 class="mt-1 rounded border-gray-300 dark:border-gray-700"
                                                                 @checked($checked)
-                                                                @disabled($isTakenByOtherFaculty || ($u->role === 'instructor' && $isAssignedToOtherInstructor))
+                                                                @disabled($isTakenByOtherFaculty)
                                                             />
                                                             <span class="min-w-0">
                                                                 <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $sport->name }}</span>
@@ -375,19 +356,7 @@
                                                                         Assigned to {{ $facultyAssigned->name }} ({{ $facultyAssigned->role }})
                                                                     </span>
                                                                 @endif
-
-                                                                @if($assignedInstructorName)
-                                                                    <span class="block text-xs text-gray-500 dark:text-gray-400">
-                                                                        Instructor: {{ $assignedInstructorName }} ({{ $assignedInstructorEmail }})
-                                                                    </span>
-                                                                @else
-                                                                    <span class="block text-xs text-gray-500 dark:text-gray-400">
-                                                                        {{ $u->role === 'instructor' ? 'Available (no instructor yet)' : 'Active sport' }}
-                                                                    </span>
-                                                                @endif
-                                                                @if($u->role === 'instructor' && $isAssignedToOtherInstructor)
-                                                                    <span class="block text-xs font-semibold text-amber-600 dark:text-amber-400 mt-1">Unavailable for instructor assignment</span>
-                                                                @endif
+                                                                <span class="block text-xs text-gray-500 dark:text-gray-400">Active sport</span>
                                                             </span>
                                                         </label>
                                                     @endforeach

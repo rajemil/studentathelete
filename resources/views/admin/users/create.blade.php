@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Add faculty</h2>
-            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a coach or instructor account.</div>
+            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a coach account.</div>
         </div>
     </x-slot>
 
@@ -27,7 +27,7 @@
             <div>
                 <x-input-label for="role" value="Role" />
                 <select id="role" name="role" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 transition" required>
-                    @foreach(['coach','instructor'] as $r)
+                    @foreach(['coach'] as $r)
                         <option value="{{ $r }}" @selected(old('role', 'coach') === $r)>{{ ucfirst($r) }}</option>
                     @endforeach
                 </select>

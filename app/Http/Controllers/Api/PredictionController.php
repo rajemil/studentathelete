@@ -170,6 +170,10 @@ class PredictionController extends Controller
 
     private function resolveSportForActor(User $actor, ?int $sportId): ?Sport
     {
+        if ($actor->role === 'coach') {
+            $sportId = $actor->sport_id;
+        }
+
         if ($sportId === null) {
             return null;
         }
@@ -225,15 +229,7 @@ class PredictionController extends Controller
             abort(403);
         }
 
-        $teamIdsForSport = CoachedTeams::teamIds($actor);
-
-        $allowedTeamStudentIds = DB::table('team_memberships')
-            ->join('teams', 'teams.id', '=', 'team_memberships.team_id')
-            ->whereIn('team_memberships.team_id', $teamIdsForSport)
-            ->where('teams.sport_id', $sport->id)
-            ->where('teams.organization_id', $actor->organization_id)
-            ->distinct()
-            ->pluck('team_memberships.user_id');
+        $allowedTeamStudentIds = CoachedTeams::coachedStudentIds($actor);
 
         foreach ($users as $u) {
             if ((int) $u->id === (int) $actor->id) {
@@ -249,7 +245,7 @@ class PredictionController extends Controller
             }
         }
 
-        if ($teamIdsForSport->isEmpty()) {
+        if ($allowedTeamStudentIds->isEmpty()) {
             abort(403);
         }
     }
