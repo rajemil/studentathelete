@@ -127,12 +127,15 @@ Route::middleware(['auth', 'org'])->group(function () {
 
         Route::get('/student/participation-logs', [StudentParticipationLogsController::class, 'index'])->name('student.participation_logs.index');
         Route::post('/student/participation-logs', [StudentParticipationLogsController::class, 'store'])->name('student.participation_logs.store');
-        
+
         Route::get('/student/academics', [StudentAcademicController::class, 'index'])->name('student.academics.index');
     });
 
-    Route::middleware('role:admin,coach')->group(function () {
+    Route::middleware('role:admin,coach,student')->group(function () {
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    });
+
+    Route::middleware('role:admin,coach')->group(function () {
 
         Route::resource('sports', SportController::class);
 

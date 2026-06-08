@@ -3,8 +3,8 @@
 namespace App\Support;
 
 use App\Models\Sport;
-use App\Models\Team;
 use App\Models\User;
+use App\Services\Sport\SportResolutionService;
 use Illuminate\Support\Collection;
 
 final class RosterAccess
@@ -30,22 +30,11 @@ final class RosterAccess
 
     public static function actorCoachesSport(User $actor, Sport $sport): bool
     {
-        if (! self::sameOrganizationSport($actor, $sport)) {
-            return false;
-        }
-
         if (! in_array($actor->role, ['coach'], true)) {
             return false;
         }
 
-        return Team::query()
-            ->where('organization_id', $actor->organization_id)
-            ->where('sport_id', $sport->id)
-            ->where(function ($q) use ($actor) {
-                $q->where('primary_coach_id', $actor->id)
-                    ->orWhereHas('coachAssignments', fn ($c) => $c->where('coach_id', $actor->id));
-            })
-            ->exists();
+        return app(SportResolutionService::class)->actorMayAccessSport($actor, $sport);
     }
 
     /**

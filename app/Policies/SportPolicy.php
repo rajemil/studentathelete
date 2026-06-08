@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Sport;
 use App\Models\User;
+use App\Services\Sport\SportResolutionService;
 
 class SportPolicy
 {
@@ -21,8 +22,8 @@ class SportPolicy
 
         return match ($user->role) {
             'admin' => true,
-            'coach' => true,
-            'student' => $user->sports()->where('sports.id', $sport->id)->exists(),
+            'coach' => app(SportResolutionService::class)->actorMayAccessSport($user, $sport),
+            'student' => app(SportResolutionService::class)->actorMayAccessSport($user, $sport),
             default => false,
         };
     }

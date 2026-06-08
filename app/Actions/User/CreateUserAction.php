@@ -34,33 +34,6 @@ class CreateUserAction
     {
         $password = $data['password'] ?: 'password';
 
-        $user = User::query()->create([
-            'organization_id' => $orgId,
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'role' => $data['role'],
-            'password' => Hash::make($password),
-            'email_verified_at' => CarbonImmutable::now(),
-        ]);
-
-        $birthdate = isset($data['birthdate']) ? CarbonImmutable::parse($data['birthdate']) : null;
-
-        $profile = Profile::query()->create([
-            'user_id' => $user->id,
-            'birthdate' => $birthdate?->toDateString(),
-            'gender' => $data['gender'] ?? null,
-            'address' => isset($data['address']) ? mb_strtoupper($data['address']) : null,
-            'profession' => $data['profession'] ?? null,
-            'field_expertise' => $data['field_expertise'] ?? null,
-            'achievements' => $data['achievements'] ?? null,
-            'coaching_experience_years' => $data['coaching_experience_years'] ?? null,
-        ]);
-
-        if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
-            $path = $data['photo']->store('faculty-photos', 'public');
-            $profile->update(['photo_path' => $path]);
-        }
-
         $allowedSportIds = Sport::query()
             ->where('organization_id', $orgId)
             ->pluck('id')
@@ -85,12 +58,37 @@ class CreateUserAction
             ->all();
 
         if (! empty($alreadyAssignedSportIds)) {
-            // Delete the user and profile to roll back if verification fails
-            $profile->delete();
-            $user->delete();
             throw ValidationException::withMessages([
                 'sport_ids' => 'One or more selected sports are already assigned to another faculty member.',
             ]);
+        }
+
+        $user = User::query()->create([
+            'organization_id' => $orgId,
+            'sport_id' => $desiredSportIds->first(),
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'role' => $data['role'],
+            'password' => Hash::make($password),
+            'email_verified_at' => CarbonImmutable::now(),
+        ]);
+
+        $birthdate = isset($data['birthdate']) ? CarbonImmutable::parse($data['birthdate']) : null;
+
+        $profile = Profile::query()->create([
+            'user_id' => $user->id,
+            'birthdate' => $birthdate?->toDateString(),
+            'gender' => $data['gender'] ?? null,
+            'address' => isset($data['address']) ? mb_strtoupper($data['address']) : null,
+            'profession' => $data['profession'] ?? null,
+            'field_expertise' => $data['field_expertise'] ?? null,
+            'achievements' => $data['achievements'] ?? null,
+            'coaching_experience_years' => $data['coaching_experience_years'] ?? null,
+        ]);
+
+        if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+            $path = $data['photo']->store('faculty-photos', 'public');
+            $profile->update(['photo_path' => $path]);
         }
 
         // Persist sport assignment (even if the sport currently has no teams).

@@ -16,10 +16,6 @@
     <a href="{{ route('admin.students.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Students</a>
 @endif
 
-@if($staffSports)
-    <a href="{{ route('sports.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Sports & teams</a>
-@endif
-
 @if($coachLike)
     <a href="{{ route('staff.students.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Students</a>
     <a href="{{ route('staff.performance_scores.hub') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Performance scores</a>
@@ -27,7 +23,7 @@
     <a href="{{ route('staff.ai_recommendations.hub') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Predictive recommendations</a>
 @endif
 
-@if($staffSports)
+@if($staffSports || $isStudent)
     <a href="{{ route('analytics.index') }}" class="block rounded-2xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/5">Analytics</a>
 @endif
 

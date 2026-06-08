@@ -5,13 +5,20 @@
                 <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Score entry</h2>
                 <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ $sport->name }} · Coach scoring</div>
             </div>
-            @unless(request()->boolean('modal'))
+            @php($staffBackUrl = \App\Support\StaffNavContext::backUrl())
+            @if($staffBackUrl)
+                <div class="flex items-center gap-2">
+                    <a href="{{ $staffBackUrl }}" class="inline-flex items-center rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-white transition">
+                        {{ \App\Support\StaffNavContext::backLabel() }}
+                    </a>
+                </div>
+            @elseif(! request()->boolean('modal'))
                 <div class="flex items-center gap-2">
                     <a href="{{ route('sports.show', $sport) }}" class="inline-flex items-center rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-white transition">
                         Back
                     </a>
                 </div>
-            @endunless
+            @endif
         </div>
     </x-slot>
 
@@ -25,7 +32,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div class="rounded-2xl bg-white/80 dark:bg-gray-900/50 border border-gray-200/60 dark:border-white/10 shadow-sm p-6 lg:col-span-2">
                 <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Add score</div>
-                <form class="mt-4 space-y-4" method="POST" action="{{ route('sports.scores.store', $sport) }}{{ request()->boolean('modal') ? '?modal=1' : '' }}">
+                <form class="mt-4 space-y-4" method="POST" action="{{ route('sports.scores.store', array_filter(['sport' => $sport, 'modal' => request()->boolean('modal') ? '1' : null, 'context' => request()->query('context')])) }}">
                     @csrf
 
                     <div>

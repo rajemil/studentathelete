@@ -8,7 +8,7 @@
 
     <div class="space-y-6">
         @forelse($sports as $sport)
-            <a href="{{ route('sports.scores.index', $sport) }}" class="block rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-5 shadow-sm hover:shadow-md transition">
+            <a href="{{ route('sports.scores.index', ['sport' => $sport, ...\App\Support\StaffNavContext::query(\App\Support\StaffNavContext::PERFORMANCE)]) }}" class="block rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-5 shadow-sm hover:shadow-md transition">
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $sport->name }}</div>

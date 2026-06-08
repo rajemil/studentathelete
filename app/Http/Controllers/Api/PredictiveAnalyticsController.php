@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Sport;
 use App\Models\User;
 use App\Services\Analytics\PredictiveAnalyticsService;
+use App\Services\Sport\SportResolutionService;
 use App\Support\CoachedTeams;
 use App\Support\RosterAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Thesis-aligned predictive analytics HTTP entry points.
@@ -20,6 +20,7 @@ class PredictiveAnalyticsController extends Controller
 {
     public function __construct(
         private readonly PredictiveAnalyticsService $predictive,
+        private readonly SportResolutionService $sportResolver,
     ) {}
 
     /**
@@ -36,7 +37,7 @@ class PredictiveAnalyticsController extends Controller
         $athlete = User::query()->findOrFail((int) $validated['user_id']);
         $this->assertCanViewAthletePredictions($request->user(), $athlete);
 
-        $sport = $this->resolveSportForActor($request->user(), isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $sport = $this->sportResolver->resolveForActor($request->user(), isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
         $horizonDays = (int) ($validated['horizon_days'] ?? 14);
 
         $prediction = $this->predictive->predictAthletePerformance($athlete, $sport, $horizonDays);
@@ -63,7 +64,7 @@ class PredictiveAnalyticsController extends Controller
             'team_b_user_ids.*' => ['integer', 'exists:users,id'],
         ]);
 
-        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $sport = $this->sportResolver->resolveForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
         $this->assertCanUseTeamRosterEndpoints($actor, $sport, [
             ...$validated['team_a_user_ids'],
             ...$validated['team_b_user_ids'],
@@ -101,37 +102,7 @@ class PredictiveAnalyticsController extends Controller
      */
     private function sportIdRulesForTeamEndpoints(User $actor): array
     {
-        if ($actor->role === 'admin') {
-            return ['nullable', 'integer', 'exists:sports,id'];
-        }
-
-        return ['required', 'integer', 'exists:sports,id'];
-    }
-
-    private function resolveSportForActor(User $actor, ?int $sportId): ?Sport
-    {
-        if ($actor->role === 'coach') {
-            $sportId = $actor->sport_id;
-        }
-
-        if ($sportId === null) {
-            return null;
-        }
-
-        $sport = Sport::query()->whereKey($sportId)->first();
-        if (! $sport) {
-            return null;
-        }
-
-        if ($actor->organization_id === null || $sport->organization_id === null) {
-            abort(403);
-        }
-
-        if ((int) $actor->organization_id !== (int) $sport->organization_id) {
-            abort(403);
-        }
-
-        return $sport;
+        return ['nullable', 'integer', 'exists:sports,id'];
     }
 
     /**

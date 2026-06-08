@@ -5,19 +5,17 @@ namespace App\Http\Controllers\Dashboard\Concerns;
 use App\Models\Event;
 use App\Models\Insight;
 use App\Models\PerformanceScore;
-use App\Models\Team;
 use App\Models\User;
 use App\Services\Analytics\AnalyticsCache;
 use App\Services\Insights\InsightsService;
-use App\Support\CoachedTeams;
+use App\Services\Sport\SportResolutionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 trait BuildsCoachStyleDashboard
 {
     /**
-     * @return array{kpi: array, teams: Collection, recentEvents: Collection, chart: array, insights: Collection, riskyAthletes: Collection}
+     * @return array{kpi: array, athletes: Collection, recentEvents: Collection, chart: array, insights: Collection, riskyAthletes: Collection}
      */
     protected function coachStyleDashboardPayload(User $user, InsightsService $insightsService): array
     {
@@ -29,15 +27,17 @@ trait BuildsCoachStyleDashboard
     }
 
     /**
-     * @return array{kpi: array, teams: Collection, recentEvents: Collection, chart: array, insights: Collection, riskyAthletes: Collection}
+     * @return array{kpi: array, athletes: Collection, recentEvents: Collection, chart: array, insights: Collection, riskyAthletes: Collection}
      */
     private function buildCoachStyleDashboardPayload(User $user, InsightsService $insightsService): array
     {
         $now = CarbonImmutable::now();
+        $sportResolver = app(SportResolutionService::class);
 
         $insightsService->ensureGenerated($now);
 
-        $athleteIds = CoachedTeams::coachedStudentIds($user);
+        $athleteIds = $sportResolver->coachedStudentIds($user);
+        $sportIds = $sportResolver->coachSportIds($user);
 
         $athletes = User::query()
             ->whereIn('id', $athleteIds)
@@ -45,25 +45,42 @@ trait BuildsCoachStyleDashboard
             ->orderBy('name')
             ->get();
 
+        $eventsQuery = Event::query()
+            ->whereNotNull('starts_at');
+
+        if ($sportIds->isNotEmpty()) {
+            $eventsQuery->whereIn('sport_id', $sportIds);
+        } else {
+            $eventsQuery->whereRaw('1 = 0');
+        }
+
         $kpi = [
             'athletes' => $athleteIds->count(),
-            'events_upcoming' => Event::query()
-                ->where('sport_id', $user->sport_id)
-                ->whereNotNull('starts_at')
+            'events_upcoming' => (clone $eventsQuery)
                 ->where('starts_at', '>=', $now)
                 ->count(),
         ];
 
-        $recentEvents = Event::query()
-            ->where('sport_id', $user->sport_id)
+        $recentEvents = (clone $eventsQuery)
             ->orderByDesc('starts_at')
             ->limit(5)
             ->get();
 
-        $sportPerformance = PerformanceScore::query()
-            ->where('sport_id', $user->sport_id)
+        $performanceQuery = PerformanceScore::query()
             ->whereNotNull('scored_on')
-            ->where('scored_on', '>=', $now->subDays(30)->toDateString())
+            ->where('scored_on', '>=', $now->subDays(30)->toDateString());
+
+        if ($sportIds->isNotEmpty()) {
+            $performanceQuery->whereIn('sport_id', $sportIds);
+        } else {
+            $performanceQuery->whereRaw('1 = 0');
+        }
+
+        if ($athleteIds->isNotEmpty()) {
+            $performanceQuery->whereIn('user_id', $athleteIds);
+        }
+
+        $sportPerformance = $performanceQuery
             ->orderBy('scored_on')
             ->get(['scored_on', 'score'])
             ->groupBy(fn ($row) => (string) $row->scored_on)
@@ -81,23 +98,28 @@ trait BuildsCoachStyleDashboard
 
         $insights = Insight::query()
             ->where(function ($q) use ($athleteIds, $orgId) {
-                $q->whereIn('user_id', $athleteIds)
-                    ->orWhere(function ($q2) use ($orgId) {
-                        $q2->where('type', 'narrative_summary')
-                            ->where('organization_id', $orgId)
-                            ->whereNull('user_id');
-                    });
+                if ($athleteIds->isNotEmpty()) {
+                    $q->whereIn('user_id', $athleteIds);
+                }
+
+                $q->orWhere(function ($q2) use ($orgId) {
+                    $q2->where('type', 'narrative_summary')
+                        ->where('organization_id', $orgId)
+                        ->whereNull('user_id');
+                });
             })
             ->orderByDesc('computed_at')
             ->limit(6)
             ->get();
 
-        $riskyAthletes = User::query()
-            ->whereIn('id', $athleteIds)
-            ->whereHas('profile', fn ($q) => $q->whereIn('injury_risk', ['high', 'medium']))
-            ->with('profile')
-            ->limit(6)
-            ->get();
+        $riskyAthletes = $athleteIds->isEmpty()
+            ? collect()
+            : User::query()
+                ->whereIn('id', $athleteIds)
+                ->whereHas('profile', fn ($q) => $q->whereIn('injury_risk', ['high', 'medium']))
+                ->with('profile')
+                ->limit(6)
+                ->get();
 
         return compact('kpi', 'athletes', 'recentEvents', 'chart', 'insights', 'riskyAthletes');
     }

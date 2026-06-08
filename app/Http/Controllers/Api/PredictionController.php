@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Sport;
 use App\Models\User;
 use App\Services\Analytics\AnalyticsService;
+use App\Services\Sport\SportResolutionService;
 use App\Support\CoachedTeams;
 use App\Support\RosterAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PredictionController extends Controller
 {
-    public function __construct(private readonly AnalyticsService $analytics) {}
+    public function __construct(
+        private readonly AnalyticsService $analytics,
+        private readonly SportResolutionService $sportResolver,
+    ) {}
 
     /**
      * GET /api/predictions/athletes/{user}?sport_id=&horizon_days=
@@ -29,7 +32,7 @@ class PredictionController extends Controller
             'horizon_days' => ['nullable', 'integer', 'min:1', 'max:90'],
         ]);
 
-        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $sport = $this->sportResolver->resolveForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
 
         $horizonDays = (int) ($validated['horizon_days'] ?? 14);
 
@@ -57,7 +60,7 @@ class PredictionController extends Controller
             'sport_id' => ['nullable', 'integer', 'exists:sports,id'],
         ]);
 
-        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $sport = $this->sportResolver->resolveForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
 
         $bundle = $this->analytics->recommendations($user, $sport);
 
@@ -87,7 +90,7 @@ class PredictionController extends Controller
             'team_b_user_ids.*' => ['integer', 'exists:users,id'],
         ]);
 
-        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $sport = $this->sportResolver->resolveForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
         $this->assertCanUseTeamRosterEndpoints($actor, $sport, [
             ...$validated['team_a_user_ids'],
             ...$validated['team_b_user_ids'],
@@ -132,7 +135,7 @@ class PredictionController extends Controller
             'lineup_size' => ['required', 'integer', 'min:1', 'max:30'],
         ]);
 
-        $sport = $this->resolveSportForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
+        $sport = $this->sportResolver->resolveForActor($actor, isset($validated['sport_id']) ? (int) $validated['sport_id'] : null);
         $this->assertCanUseTeamRosterEndpoints($actor, $sport, $validated['candidate_user_ids']);
 
         $candidates = User::query()
@@ -162,32 +165,6 @@ class PredictionController extends Controller
         $role = $actor->role ?? 'student';
 
         return ['nullable', 'integer', 'exists:sports,id'];
-    }
-
-    private function resolveSportForActor(User $actor, ?int $sportId): ?Sport
-    {
-        if ($actor->role === 'coach') {
-            $sportId = $actor->sport_id;
-        }
-
-        if ($sportId === null) {
-            return null;
-        }
-
-        $sport = Sport::query()->whereKey($sportId)->first();
-        if (! $sport) {
-            return null;
-        }
-
-        if ($actor->organization_id === null || $sport->organization_id === null) {
-            abort(403);
-        }
-
-        if ((int) $actor->organization_id !== (int) $sport->organization_id) {
-            abort(403);
-        }
-
-        return $sport;
     }
 
     /**

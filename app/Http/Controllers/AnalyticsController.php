@@ -2,51 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Analytics\GetDashboardAnalyticsAction;
 use App\Models\Sport;
-use App\Models\Team;
-use App\Models\User;
-use App\Support\CoachedTeams;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AnalyticsController extends Controller
 {
-    public function index(): View
+    public function __construct(
+        private readonly GetDashboardAnalyticsAction $dashboardAnalytics,
+    ) {}
+
+    public function index(Request $request): View
     {
         $this->authorize('viewAny', Sport::class);
 
-        $user = auth()->user();
+        $sportFilter = $request->filled('sport_id') ? (int) $request->input('sport_id') : null;
 
-        $sportsQuery = Sport::query()
-            ->where('organization_id', $user->organization_id)
-            ->orderBy('name');
-
-        $studentsQuery = User::query()
-            ->where('organization_id', $user->organization_id)
-            ->where('role', 'student')
-            ->orderBy('name')
-            ->limit(500);
-
-        if (in_array($user->role, ['coach'], true)) {
-            $sportId = $user->sport_id;
-
-            if (!$sportId) {
-                $sportsQuery->whereRaw('1 = 0');
-                $studentsQuery->whereRaw('1 = 0');
-            } else {
-                $sportsQuery->where('id', $sportId);
-
-                $studentIds = CoachedTeams::coachedStudentIds($user);
-                if ($studentIds->isEmpty()) {
-                    $studentsQuery->whereRaw('1 = 0');
-                } else {
-                    $studentsQuery->whereIn('id', $studentIds);
-                }
-            }
-        }
-
-        $sports = $sportsQuery->get(['id', 'name']);
-        $students = $studentsQuery->get(['id', 'name', 'email']);
-
-        return view('analytics.index', compact('sports', 'students'));
+        return view('analytics.index', $this->dashboardAnalytics->execute(auth()->user(), $sportFilter));
     }
 }

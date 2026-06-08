@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsCache;
+use App\Services\Sport\SportResolutionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -31,6 +33,28 @@ class CoachStudentController extends Controller
             });
         }
 
+        if ($request->user()->role === 'coach') {
+            $sportResolver = app(SportResolutionService::class);
+            $coachedIds = $sportResolver->coachedStudentIds($request->user());
+            $coachSportIds = $sportResolver->coachSportIds($request->user());
+
+            $query->where(function ($q) use ($coachedIds, $coachSportIds) {
+                if ($coachedIds->isNotEmpty()) {
+                    $q->whereIn('id', $coachedIds);
+                }
+
+                if ($coachSportIds->isNotEmpty()) {
+                    $q->orWhereHas('sportApplications', fn ($apps) => $apps
+                        ->whereIn('sport_id', $coachSportIds)
+                        ->where('status', 'pending'));
+                }
+
+                if ($coachedIds->isEmpty() && $coachSportIds->isEmpty()) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+        }
+
         $students = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
         return view('staff.students.index', compact('students', 'status', 'search'));
@@ -44,16 +68,12 @@ class CoachStudentController extends Controller
             'approval_status' => 'approved',
         ]);
 
-        // Bust dashboard caches for coaches assigned to any sport the student belongs to.
-        $studentSportIds = $user->sports()->pluck('sports.id');
+        $studentSportIds = app(SportResolutionService::class)->athleteSportIds($user);
         if ($studentSportIds->isNotEmpty()) {
-            $coachIds = User::query()
-                ->where('role', 'coach')
-                ->whereIn('sport_id', $studentSportIds)
-                ->pluck('id');
-            foreach ($coachIds as $coachId) {
-                \App\Services\Analytics\AnalyticsCache::forgetUserDashboard((int) $coachId);
-            }
+            AnalyticsCache::forgetCoachDashboardsForSports(
+                $studentSportIds,
+                (int) $request->user()->organization_id,
+            );
         }
 
         return back()->with('status', 'Student approved successfully.');

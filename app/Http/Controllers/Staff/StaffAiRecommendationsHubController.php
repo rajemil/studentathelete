@@ -3,34 +3,14 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sport;
-use App\Models\Team;
-use App\Support\CoachedTeams;
+use App\Services\Sport\SportResolutionService;
 use Illuminate\View\View;
 
 class StaffAiRecommendationsHubController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(SportResolutionService $sportResolver): View
     {
-        $user = auth()->user();
-        $teamIds = CoachedTeams::teamIds($user);
-
-        $sportIds = Team::query()
-            ->whereIn('id', $teamIds)
-            ->pluck('sport_id')
-            ->unique()
-            ->filter();
-
-        // Also include the coach's directly assigned sport (set by admin via users.sport_id)
-        if ($user->sport_id) {
-            $sportIds = $sportIds->push($user->sport_id)->unique();
-        }
-
-        $sports = Sport::query()
-            ->where('organization_id', $user->organization_id)
-            ->whereIn('id', $sportIds)
-            ->orderBy('name')
-            ->get();
+        $sports = $sportResolver->sportsForActor(auth()->user());
 
         return view('staff.ai-recommendations-hub', compact('sports'));
     }

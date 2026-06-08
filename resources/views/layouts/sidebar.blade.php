@@ -1,10 +1,14 @@
 @php
+    use App\Support\StaffNavContext;
+
     $role = Auth::user()->role ?? 'student';
     $isAdmin = $role === 'admin';
     $isCoach = $role === 'coach';
     $isStudent = $role === 'student';
     $staffSports = $isAdmin || $isCoach;
     $coachLike = $isCoach;
+    $performanceNavActive = StaffNavContext::isPerformanceActive();
+    $predictiveNavActive = StaffNavContext::isPredictiveActive();
 @endphp
 
 <aside class="hidden lg:flex lg:flex-col lg:w-72 lg:shrink-0 h-[calc(100vh-3rem)] sticky top-6">
@@ -57,7 +61,7 @@
                 </a>
 
                 @if($isAdmin)
-                    <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Faculty management</div>
+                    <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Coach management</div>
                     <a href="{{ route('admin.users.index') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
                             {{ request()->routeIs('admin.users.*') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
@@ -69,7 +73,7 @@
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
                         </span>
-                        Faculty management
+                        Coach management
                     </a>
 
                     <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Student management</div>
@@ -84,10 +88,15 @@
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
                         </span>
-                        Students
+                        <div class="flex items-center justify-between gap-2 flex-1 min-w-0">
+                            <span class="truncate">Students</span>
+                            @if(($pendingApplicationsCount ?? 0) > 0)
+                                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                                    {{ $pendingApplicationsCount }}
+                                </span>
+                            @endif
+                        </div>
                     </a>
-
-                    <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Team & sport</div>
                 @endif
 
                 @if($isCoach)
@@ -103,29 +112,8 @@
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
                         </span>
-                        Students
-                    </a>
-                @endif
-
-                @if($staffSports)
-                    <a href="{{ route('sports.index') }}"
-                        class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
-                            {{ request()->routeIs('sports.*') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
-                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ request()->routeIs('sports.*') ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M4 19c0-3 2-5 5-5h6c3 0 5 2 5 5"></path>
-                                <path d="M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
-                                <path d="M15 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
-                            </svg>
-                        </span>
                         <div class="flex items-center justify-between gap-2 flex-1 min-w-0">
-                            <span class="truncate">
-                                @if($isAdmin)
-                                    Sports & teams
-                                @else
-                                    Coached teams & sports
-                                @endif
-                            </span>
+                            <span class="truncate">Students</span>
                             @if(($pendingApplicationsCount ?? 0) > 0)
                                 <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
                                     {{ $pendingApplicationsCount }}
@@ -139,8 +127,8 @@
                     <div class="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Coaching</div>
                     <a href="{{ route('staff.performance_scores.hub') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
-                            {{ request()->routeIs('staff.performance_scores.hub') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
-                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ request()->routeIs('staff.performance_scores.hub') ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
+                            {{ $performanceNavActive ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
+                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ $performanceNavActive ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
@@ -149,8 +137,8 @@
                     </a>
                     <a href="{{ route('staff.injury_logs.index') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
-                            {{ request()->routeIs('staff.injury_logs.index') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
-                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ request()->routeIs('staff.injury_logs.index') ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
+                            {{ request()->routeIs('staff.injury_logs.*', 'staff.injury_records.*') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
+                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ request()->routeIs('staff.injury_logs.*', 'staff.injury_records.*') ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                             </svg>
@@ -159,8 +147,8 @@
                     </a>
                     <a href="{{ route('staff.ai_recommendations.hub') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
-                            {{ request()->routeIs('staff.ai_recommendations.hub') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
-                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ request()->routeIs('staff.ai_recommendations.hub') ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
+                            {{ $predictiveNavActive ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">
+                        <span class="h-9 w-9 rounded-2xl flex items-center justify-center transition-colors {{ $predictiveNavActive ? 'bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] text-white shadow-sm glow-border-orange' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 group-hover:text-[#FF7A1A] dark:group-hover:text-[#FFB24D]' }}">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
@@ -169,7 +157,7 @@
                     </a>
                 @endif
 
-                @if($staffSports)
+                @if($staffSports || $isStudent)
                     <a href="{{ route('analytics.index') }}"
                         class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition
                             {{ request()->routeIs('analytics.*') ? 'bg-gray-900 text-white shadow-md dark:bg-white/10 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' }}">

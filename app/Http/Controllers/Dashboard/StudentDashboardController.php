@@ -13,6 +13,7 @@ use App\Models\TrainingRecommendation;
 use App\Services\AI\AiManager;
 use App\Services\InjuryRisk\InjuryRiskService;
 use App\Services\Insights\InsightsService;
+use App\Services\Sport\SportResolutionService;
 use App\Services\Training\TrainingRecommendationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -25,7 +26,7 @@ class StudentDashboardController extends Controller
         $user = auth()->user();
         $now = CarbonImmutable::now();
         $teamIds = $user->teams()->pluck('teams.id');
-        $sportIds = $user->sports()->pluck('sports.id');
+        $sportIds = app(SportResolutionService::class)->athleteSportIds($user);
 
         $insightsService->ensureGenerated($now);
 

@@ -113,7 +113,7 @@
                                         <template x-if="n.data?.sport_application_id">
                                             <div class="mt-4">
                                                 <a 
-                                                    :href="window.userRole === 'student' ? '/student/sports' : `/sports/${n.data.sport_slug || n.data.sport_id}#pending-applications`"
+                                                    :href="window.userRole === 'student' ? '/student/sports' : (window.userRole === 'coach' ? '/staff/students' : `/sports/${n.data.sport_slug || n.data.sport_id}#pending-applications`)"
                                                     class="block w-full text-center text-xs font-black text-white px-4 py-2.5 rounded-2xl bg-gradient-to-br from-[#FF7A1A] to-[#FFB24D] shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition hover:scale-[1.02] active:scale-95"
                                                     x-text="window.userRole === 'student' ? 'View My Sports' : 'View Applications Table'"
                                                 ></a>

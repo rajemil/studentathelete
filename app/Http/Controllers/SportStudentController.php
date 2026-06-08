@@ -25,11 +25,10 @@ class SportStudentController extends Controller
 
         $sport->students()->syncWithoutDetaching([$student->id]);
 
-        // Bust coach dashboard cache for coaches assigned to this sport.
-        $coachIds = User::query()->where('role', 'coach')->where('sport_id', $sport->id)->pluck('id');
-        foreach ($coachIds as $coachId) {
-            \App\Services\Analytics\AnalyticsCache::forgetUserDashboard((int) $coachId);
-        }
+        \App\Services\Analytics\AnalyticsCache::forgetCoachDashboardsForSports(
+            [(int) $sport->id],
+            (int) $request->user()->organization_id,
+        );
 
         SportApplication::query()->where('sport_id', $sport->id)->where('user_id', $student->id)->delete();
 
@@ -52,11 +51,10 @@ class SportStudentController extends Controller
 
         $sport->students()->detach($user->id);
 
-        // Bust coach dashboard cache for coaches assigned to this sport.
-        $coachIds = User::query()->where('role', 'coach')->where('sport_id', $sport->id)->pluck('id');
-        foreach ($coachIds as $coachId) {
-            \App\Services\Analytics\AnalyticsCache::forgetUserDashboard((int) $coachId);
-        }
+        \App\Services\Analytics\AnalyticsCache::forgetCoachDashboardsForSports(
+            [(int) $sport->id],
+            (int) $request->user()->organization_id,
+        );
 
         SportApplication::query()->where('sport_id', $sport->id)->where('user_id', $user->id)->delete();
 

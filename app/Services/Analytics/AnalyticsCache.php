@@ -83,4 +83,17 @@ final class AnalyticsCache
     {
         self::forget(self::dashboardPayloadKey($userId));
     }
+
+    /**
+     * @param  iterable<int>  $sportIds
+     */
+    public static function forgetCoachDashboardsForSports(iterable $sportIds, ?int $organizationId = null): void
+    {
+        $coachIds = app(\App\Services\Sport\SportResolutionService::class)
+            ->coachIdsForSports(collect($sportIds), $organizationId);
+
+        foreach ($coachIds as $coachId) {
+            self::forgetUserDashboard((int) $coachId);
+        }
+    }
 }

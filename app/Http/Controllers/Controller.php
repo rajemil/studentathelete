@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\StaffNavContext;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -18,8 +19,15 @@ abstract class Controller extends BaseController
     protected function redirectRoutePreservingModal(Request $request, string $routeName, mixed $parameters = [], int $status = 302, array $headers = []): RedirectResponse
     {
         $url = route($routeName, $parameters);
+        $query = [];
         if ($request->boolean('modal')) {
-            $url .= (str_contains($url, '?') ? '&' : '?').'modal=1';
+            $query['modal'] = '1';
+        }
+        if (StaffNavContext::isValid($request->query('context'))) {
+            $query['context'] = $request->query('context');
+        }
+        if ($query !== []) {
+            $url .= (str_contains($url, '?') ? '&' : '?').http_build_query($query);
         }
 
         return redirect()->to($url, $status, $headers);

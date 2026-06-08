@@ -101,13 +101,13 @@ class AdminUserController extends Controller
             ->values();
 
         // Enforce: one faculty (coach) per sport.
-        $alreadyAssignedSportIds = DB::table('users')
-            ->where('organization_id', $orgId)
-            ->whereIn('role', ['coach'])
-            ->whereNotNull('sport_id')
-            ->whereIn('sport_id', $desiredSportIds->all())
+        $alreadyAssignedSportIds = DB::table('sport_user')
+            ->join('users', 'sport_user.user_id', '=', 'users.id')
+            ->where('users.organization_id', $orgId)
+            ->whereIn('users.role', ['coach'])
+            ->whereIn('sport_user.sport_id', $desiredSportIds->all())
             ->distinct()
-            ->pluck('sport_id')
+            ->pluck('sport_user.sport_id')
             ->map(fn ($v) => (int) $v)
             ->all();
 
@@ -266,12 +266,12 @@ class AdminUserController extends Controller
             ->values();
 
         // Enforce: one faculty (coach) per sport (allow keeping already-owned sports).
-        $alreadyAssignedToOther = DB::table('users')
-            ->where('organization_id', $orgId)
-            ->whereIn('role', ['coach'])
-            ->whereNotNull('sport_id')
-            ->where('id', '!=', $user->id)
-            ->whereIn('sport_id', $desiredSportIds->all())
+        $alreadyAssignedToOther = DB::table('sport_user')
+            ->join('users', 'sport_user.user_id', '=', 'users.id')
+            ->where('users.organization_id', $orgId)
+            ->whereIn('users.role', ['coach'])
+            ->where('sport_user.user_id', '!=', $user->id)
+            ->whereIn('sport_user.sport_id', $desiredSportIds->all())
             ->exists();
 
         if ($alreadyAssignedToOther) {

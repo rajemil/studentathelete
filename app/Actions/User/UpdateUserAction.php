@@ -46,10 +46,38 @@ class UpdateUserAction
             }
         }
 
+        $allowedSportIds = Sport::query()
+            ->where('organization_id', $orgId)
+            ->pluck('id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
+        $desiredSportIds = collect($data['sport_ids'] ?? [])
+            ->map(fn ($v) => (int) $v)
+            ->filter(fn (int $id) => in_array($id, $allowedSportIds, true))
+            ->unique()
+            ->values();
+
+        // Enforce: one faculty (coach) per sport (allow keeping already-owned sports).
+        $alreadyAssignedToOther = DB::table('sport_user')
+            ->join('users', 'sport_user.user_id', '=', 'users.id')
+            ->where('users.organization_id', $orgId)
+            ->whereIn('users.role', ['coach'])
+            ->where('sport_user.user_id', '!=', $user->id)
+            ->whereIn('sport_user.sport_id', $desiredSportIds->all())
+            ->exists();
+
+        if ($alreadyAssignedToOther) {
+            throw ValidationException::withMessages([
+                'sport_ids' => 'One or more selected sports are already assigned to another faculty member.',
+            ]);
+        }
+
         $updateData = [
             'name' => mb_strtoupper($data['name']),
             'email' => $data['email'],
             'role' => $data['role'],
+            'sport_id' => $desiredSportIds->first(),
         ];
 
         if (! empty($data['password'])) {
@@ -77,33 +105,6 @@ class UpdateUserAction
             }
             $path = $data['photo']->store('faculty-photos', 'public');
             $profile->update(['photo_path' => $path]);
-        }
-
-        $allowedSportIds = Sport::query()
-            ->where('organization_id', $orgId)
-            ->pluck('id')
-            ->map(fn ($v) => (int) $v)
-            ->all();
-
-        $desiredSportIds = collect($data['sport_ids'] ?? [])
-            ->map(fn ($v) => (int) $v)
-            ->filter(fn (int $id) => in_array($id, $allowedSportIds, true))
-            ->unique()
-            ->values();
-
-        // Enforce: one faculty (coach) per sport (allow keeping already-owned sports).
-        $alreadyAssignedToOther = DB::table('sport_user')
-            ->join('users', 'sport_user.user_id', '=', 'users.id')
-            ->where('users.organization_id', $orgId)
-            ->whereIn('users.role', ['coach'])
-            ->where('sport_user.user_id', '!=', $user->id)
-            ->whereIn('sport_user.sport_id', $desiredSportIds->all())
-            ->exists();
-
-        if ($alreadyAssignedToOther) {
-            throw ValidationException::withMessages([
-                'sport_ids' => 'One or more selected sports are already assigned to another faculty member.',
-            ]);
         }
 
         // Keep the faculty's sport assignments in sync.

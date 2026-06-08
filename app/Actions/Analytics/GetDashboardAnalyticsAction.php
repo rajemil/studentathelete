@@ -3,23 +3,32 @@
 namespace App\Actions\Analytics;
 
 use App\Models\Sport;
-use App\Models\Team;
 use App\Models\User;
-use App\Support\CoachedTeams;
+use App\Services\Sport\SportResolutionService;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 class GetDashboardAnalyticsAction
 {
+    public function __construct(
+        private readonly SportResolutionService $sportResolver,
+    ) {}
+
     /**
-     * Get sports and students based on the user's role and organization.
-     *
-     * @param  User  $user
-     * @return array{sports: \Illuminate\Database\Eloquent\Collection, students: \Illuminate\Database\Eloquent\Collection}
+     * @return array{sports: EloquentCollection, students: EloquentCollection, selectedSportId: ?int}
      */
-    public function execute(User $user): array
+    public function execute(User $user, ?int $sportFilter = null): array
     {
-        $sportsQuery = Sport::query()
-            ->where('organization_id', $user->organization_id)
-            ->orderBy('name');
+        $sports = $this->sportResolver->sportsForActor($user, ['id', 'name']);
+
+        if ($user->role === 'student') {
+            return [
+                'sports' => $sports,
+                'students' => User::query()
+                    ->whereKey($user->id)
+                    ->get(['id', 'name', 'email']),
+                'selectedSportId' => $this->resolveStudentSportFilter($user, $sportFilter),
+            ];
+        }
 
         $studentsQuery = User::query()
             ->where('organization_id', $user->organization_id)
@@ -27,20 +36,20 @@ class GetDashboardAnalyticsAction
             ->orderBy('name')
             ->limit(500);
 
-        if (in_array($user->role, ['coach'], true)) {
-            $sportIds = Team::query()
-                ->whereIn('id', CoachedTeams::teamIds($user))
-                ->pluck('sport_id')
-                ->unique()
-                ->filter();
+        $selectedSportId = null;
 
-            if ($sportIds->isEmpty()) {
-                $sportsQuery->whereRaw('1 = 0');
+        if ($user->role === 'coach') {
+            $selectedSportId = $this->resolveCoachSportFilter($user, $sportFilter, $sports);
+
+            if ($selectedSportId !== null) {
+                $sport = Sport::query()->find($selectedSportId);
+                $studentIds = $sport instanceof Sport
+                    ? $this->sportResolver->coachedStudentIdsForSport($user, $sport)
+                    : collect();
             } else {
-                $sportsQuery->whereIn('id', $sportIds);
+                $studentIds = $this->sportResolver->coachedStudentIds($user);
             }
 
-            $studentIds = CoachedTeams::coachedStudentIds($user);
             if ($studentIds->isEmpty()) {
                 $studentsQuery->whereRaw('1 = 0');
             } else {
@@ -49,8 +58,37 @@ class GetDashboardAnalyticsAction
         }
 
         return [
-            'sports' => $sportsQuery->get(['id', 'name']),
+            'sports' => $sports,
             'students' => $studentsQuery->get(['id', 'name', 'email']),
+            'selectedSportId' => $selectedSportId,
         ];
+    }
+
+    private function resolveCoachSportFilter(User $coach, ?int $sportFilter, EloquentCollection $sports): ?int
+    {
+        if ($sportFilter === null) {
+            return null;
+        }
+
+        $sport = Sport::query()->find($sportFilter);
+        if (! $sport instanceof Sport || ! $this->sportResolver->actorMayAccessSport($coach, $sport)) {
+            return null;
+        }
+
+        return (int) $sport->id;
+    }
+
+    private function resolveStudentSportFilter(User $student, ?int $sportFilter): ?int
+    {
+        if ($sportFilter === null) {
+            return null;
+        }
+
+        $allowed = $this->sportResolver->athleteSportIds($student);
+        if (! $allowed->contains($sportFilter)) {
+            return null;
+        }
+
+        return $sportFilter;
     }
 }

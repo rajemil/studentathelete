@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-                <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Faculty management</h2>
+                <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Coach management</h2>
                 <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage coach accounts.</div>
             </div>
         </div>
@@ -17,17 +17,17 @@
 
         <div class="flex items-center justify-end">
             <button type="button" @click="addOpen = true" class="inline-flex items-center rounded-2xl bg-gradient-to-r from-[#FF7A1A] to-[#FFB24D] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95">
-                Add faculty
+                Add coach
             </button>
         </div>
 
-        <!-- Add faculty modal -->
+        <!-- Add coach modal -->
         <div x-show="addOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" x-data="{ photoUrl: null, birthdate: '', role: '{{ old('role','coach') }}', calcAge() { if(!this.birthdate) return ''; const d = new Date(this.birthdate); if(String(d) === 'Invalid Date') return ''; const now = new Date(); let age = now.getFullYear() - d.getFullYear(); const m = now.getMonth() - d.getMonth(); if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--; return age < 0 ? '' : age; } }">
             <div class="absolute inset-0 bg-black/60" @click="addOpen = false"></div>
             <div class="relative w-full max-w-5xl rounded-2xl border border-white/10 bg-white dark:bg-gray-900 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
                 <div class="px-6 py-4 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between shrink-0">
                     <div>
-                        <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">Add faculty</div>
+                        <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">Add coach</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Personal details + role + sports/teams assignment.</div>
                     </div>
                     <button type="button" class="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:underline" @click="addOpen = false">Close</button>
@@ -95,7 +95,7 @@
                                 </div>
                             </div>
 
-                            @include('partials.faculty-profile-fields')
+                            @include('partials.Coach-profile-fields')
 
                             <div>
                                 <x-input-label for="achievements" value="Achievements" />
@@ -112,8 +112,8 @@
                         <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                             @foreach($sports as $sport)
                                 @php
-                                    $facultyAssigned = $sportFacultyAssignments[$sport->id] ?? null;
-                                    $isTaken = $facultyAssigned !== null;
+                                    $CoachAssigned = $sportCoachAssignments[$sport->id] ?? null;
+                                    $isTaken = $CoachAssigned !== null;
                                 @endphp
                                 <label class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/60 dark:bg-gray-900/40 p-4 flex items-start gap-3 {{ $isTaken ? 'opacity-60' : '' }}">
                                     <input type="checkbox" name="sport_ids[]" value="{{ $sport->id }}" class="mt-1 rounded border-gray-300 dark:border-gray-700" @disabled($isTaken) />
@@ -121,7 +121,7 @@
                                         <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $sport->name }}</span>
                                         @if($isTaken)
                                             <span class="block text-xs font-semibold text-amber-600 dark:text-amber-400 mt-1">
-                                                Assigned to {{ $facultyAssigned->name }} ({{ $facultyAssigned->role }})
+                                                Assigned to {{ $CoachAssigned->name }} ({{ $CoachAssigned->role }})
                                             </span>
                                         @endif
                                         <span class="block text-xs text-gray-500 dark:text-gray-400">Active sport</span>
@@ -144,7 +144,7 @@
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-white/10">
                     <thead class="bg-gray-50/70 dark:bg-white/5">
                         <tr>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Faculty</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Coach</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Role</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Assigned sports</th>
                             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Actions</th>
@@ -224,7 +224,7 @@
                                     <div class="relative mx-auto w-full max-w-lg rounded-2xl border border-white/10 bg-white dark:bg-gray-900 shadow-xl overflow-hidden">
                                         <div class="px-6 py-4 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between">
                                             <div>
-                                                <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">Delete faculty</div>
+                                                <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">Delete coach</div>
                                                 <div class="text-sm text-gray-600 dark:text-gray-400">{{ $u->name }} · {{ $u->email }}</div>
                                             </div>
                                             <button type="button" class="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:underline" @click="delOpen = false">Close</button>
@@ -232,7 +232,7 @@
 
                                         <div class="p-6 space-y-4">
                                             <div class="rounded-2xl border border-red-200/60 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-100">
-                                                This will permanently delete the faculty account and related profile data. This action cannot be undone.
+                                                This will permanently delete the Coach account and related profile data. This action cannot be undone.
                                             </div>
 
                                             <form method="POST" action="{{ route('admin.users.destroy', $u) }}" class="flex items-center justify-end gap-3">
@@ -253,7 +253,7 @@
                                     <div class="relative mx-auto w-full max-w-6xl rounded-2xl border border-white/10 bg-white dark:bg-gray-900 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
                                         <div class="px-6 py-4 border-b border-gray-200/60 dark:border-white/10 flex items-center justify-between shrink-0">
                                             <div>
-                                                <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">Manage faculty</div>
+                                                <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">Manage coach</div>
                                                 <div class="text-sm text-gray-600 dark:text-gray-400">{{ $u->name }} · {{ $u->email }}</div>
                                             </div>
                                             <button type="button" class="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:underline" @click="open = false">Close</button>
@@ -321,7 +321,7 @@
                                                         </div>
                                                     </div>
 
-                                                    @include('partials.faculty-profile-fields', ['profile' => $u->profile])
+                                                    @include('partials.Coach-profile-fields', ['profile' => $u->profile])
 
                                                     <div>
                                                         <x-input-label value="Achievements" />
@@ -333,31 +333,31 @@
                                             <div>
                                                 <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Sports assignment</div>
                                                 <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                                    Select which sports this faculty member will coach.
-                                                    Sports already assigned to another faculty member are disabled.
+                                                    Select which sports this Coach member will coach.
+                                                    Sports already assigned to another Coach member are disabled.
                                                 </div>
 
                                                 <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     @foreach($sports as $sport)
                                                         @php
-                                                            $facultyAssigned = $sportFacultyAssignments[$sport->id] ?? null;
-                                                            $isTakenByOtherFaculty = $facultyAssigned && (int) $facultyAssigned->id !== (int) $u->id;
+                                                            $CoachAssigned = $sportCoachAssignments[$sport->id] ?? null;
+                                                            $isTakenByOtherCoach = $CoachAssigned && (int) $CoachAssigned->id !== (int) $u->id;
                                                             $checked = in_array((int) $sport->id, old('sport_ids', $assignedSportIds), true);
                                                         @endphp
-                                                        <label class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/60 dark:bg-gray-900/40 p-4 flex items-start gap-3 {{ $isTakenByOtherFaculty ? 'opacity-60' : '' }}">
+                                                        <label class="rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/60 dark:bg-gray-900/40 p-4 flex items-start gap-3 {{ $isTakenByOtherCoach ? 'opacity-60' : '' }}">
                                                             <input
                                                                 type="checkbox"
                                                                 name="sport_ids[]"
                                                                 value="{{ $sport->id }}"
                                                                 class="mt-1 rounded border-gray-300 dark:border-gray-700"
                                                                 @checked($checked)
-                                                                @disabled($isTakenByOtherFaculty)
+                                                                @disabled($isTakenByOtherCoach)
                                                             />
                                                             <span class="min-w-0">
                                                                 <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $sport->name }}</span>
-                                                                @if($isTakenByOtherFaculty)
+                                                                @if($isTakenByOtherCoach)
                                                                     <span class="block text-xs font-semibold text-amber-600 dark:text-amber-400 mt-1">
-                                                                        Assigned to {{ $facultyAssigned->name }} ({{ $facultyAssigned->role }})
+                                                                        Assigned to {{ $CoachAssigned->name }} ({{ $CoachAssigned->role }})
                                                                     </span>
                                                                 @endif
                                                                 <span class="block text-xs text-gray-500 dark:text-gray-400">Active sport</span>

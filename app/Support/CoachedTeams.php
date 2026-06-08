@@ -5,8 +5,6 @@ namespace App\Support;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-
 final class CoachedTeams
 {
     /**
@@ -28,17 +26,11 @@ final class CoachedTeams
     }
 
     /**
-     * Student user IDs in the sport coached by the user (for this organization).
+     * Student user IDs coached by the user (teams + sport enrollments).
      */
     public static function coachedStudentIds(User $user): Collection
     {
-        if (!$user->sport_id) {
-            return collect();
-        }
-
-        return DB::table('sport_user')
-            ->where('sport_id', $user->sport_id)
-            ->distinct()
-            ->pluck('user_id');
+        return app(\App\Services\Sport\SportResolutionService::class)
+            ->coachedStudentIds($user);
     }
 }

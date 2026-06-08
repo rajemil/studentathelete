@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Sport;
 use App\Models\User;
+use App\Support\StaffNavContext;
 use App\Services\Analytics\AnalyticsCache;
 use App\Services\Team\TeamSuggestionService;
 use Illuminate\Http\RedirectResponse;
@@ -47,6 +48,12 @@ class SportTeamSuggestionController extends Controller
             ->get(['id', 'name', 'email']);
 
         if ($students->isEmpty()) {
+            if (StaffNavContext::current() === StaffNavContext::PREDICTIVE) {
+                return redirect()
+                    ->route('staff.ai_recommendations.hub')
+                    ->with('status', 'Assign student athletes to this sport first.');
+            }
+
             return $this->redirectRoutePreservingModal($request, 'sports.show', $sport)
                 ->with('status', 'Assign student athletes to this sport first.');
         }

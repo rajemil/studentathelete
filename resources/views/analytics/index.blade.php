@@ -1,35 +1,71 @@
+@php
+    $actorRole = auth()->user()->role;
+    $isStudent = $actorRole === 'student';
+    $isCoach = $actorRole === 'coach';
+    $isStaff = in_array($actorRole, ['admin', 'coach'], true);
+    $selectedSportId = $selectedSportId ?? null;
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <div>
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Analytics</h2>
-            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">Performance analytics, win probability, and data-driven lineup suggestions.</div>
+            <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                @if($isStudent)
+                    Your performance analytics and training insights.
+                @else
+                    Performance analytics, win probability, and data-driven lineup suggestions.
+                @endif
+            </div>
         </div>
     </x-slot>
 
     <div class="py-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8" id="analytics-root">
             <div data-analytics="toast" hidden></div>
+
+            @if($isCoach && $sports->isNotEmpty())
+                <form method="GET" action="{{ route('analytics.index') }}" class="rounded-xl bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap items-end gap-4">
+                    <div class="min-w-[220px] flex-1">
+                        <x-input-label for="filter_sport_id" value="Filter by sport" />
+                        <select id="filter_sport_id" name="sport_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" onchange="this.form.submit()">
+                            <option value="">All assigned sports</option>
+                            @foreach($sports as $sport)
+                                <option value="{{ $sport->id }}" @selected((int) $selectedSportId === (int) $sport->id)>{{ $sport->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @if($selectedSportId)
+                        <a href="{{ route('analytics.index') }}" class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">Clear filter</a>
+                    @endif
+                </form>
+            @endif
+
             <div class="rounded-xl bg-white dark:bg-gray-800 shadow p-6">
-                <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Student athlete performance analytics</div>
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {{ $isStudent ? 'My performance analytics' : 'Student athlete performance analytics' }}
+                </div>
 
                 <form class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end" data-analytics="athlete-form">
                     <div>
-                        <x-input-label for="athlete_user_id" value="Student athlete" />
-                        <select id="athlete_user_id" name="user_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required>
-                            <option value="">Select...</option>
+                        <x-input-label for="athlete_user_id" value="{{ $isStudent ? 'Athlete' : 'Student athlete' }}" />
+                        <select id="athlete_user_id" name="user_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required @disabled($isStudent)>
+                            @if(!$isStudent)
+                                <option value="">Select...</option>
+                            @endif
                             @foreach($students as $s)
-                                <option value="{{ $s->id }}">{{ $s->name }} ({{ $s->email }})</option>
+                                <option value="{{ $s->id }}" @selected($isStudent)>{{ $s->name }}@unless($isStudent) ({{ $s->email }})@endunless</option>
                             @endforeach
                         </select>
                     </div>
 
-                    @if(auth()->user()->role === 'admin')
+                    @if($sports->isNotEmpty())
                     <div>
                         <x-input-label for="athlete_sport_id" value="Sport (optional)" />
                         <select id="athlete_sport_id" name="sport_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All sports</option>
                             @foreach($sports as $sport)
-                                <option value="{{ $sport->id }}">{{ $sport->name }}</option>
+                                <option value="{{ $sport->id }}" @selected((int) $selectedSportId === (int) $sport->id)>{{ $sport->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -81,16 +117,17 @@
                 </div>
             </div>
 
+            @if($isStaff)
             <div class="rounded-xl bg-white dark:bg-gray-800 shadow p-6">
                 <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Team win probability</div>
                 <form class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4 items-end" data-analytics="winprob-form">
-                    @if(auth()->user()->role === 'admin')
+                    @if($sports->isNotEmpty())
                     <div>
                         <x-input-label for="wp_sport_id" value="Sport (optional)" />
                         <select id="wp_sport_id" name="sport_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All sports</option>
                             @foreach($sports as $sport)
-                                <option value="{{ $sport->id }}">{{ $sport->name }}</option>
+                                <option value="{{ $sport->id }}" @selected((int) $selectedSportId === (int) $sport->id)>{{ $sport->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -132,13 +169,13 @@
             <div class="rounded-xl bg-white dark:bg-gray-800 shadow p-6">
                 <div class="text-sm font-medium text-gray-700 dark:text-gray-200">Strongest lineup</div>
                 <form class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4 items-end" data-analytics="lineup-form">
-                    @if(auth()->user()->role === 'admin')
+                    @if($sports->isNotEmpty())
                     <div>
                         <x-input-label for="lu_sport_id" value="Sport (optional)" />
                         <select id="lu_sport_id" name="sport_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All sports</option>
                             @foreach($sports as $sport)
-                                <option value="{{ $sport->id }}">{{ $sport->name }}</option>
+                                <option value="{{ $sport->id }}" @selected((int) $selectedSportId === (int) $sport->id)>{{ $sport->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -172,6 +209,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-800/60 p-4 text-sm text-gray-700 dark:text-gray-200">
                 Tip: Predictions improve as you add more `performance_scores` history for each athlete.

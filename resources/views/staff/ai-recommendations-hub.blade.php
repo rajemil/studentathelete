@@ -6,9 +6,15 @@
         </div>
     </x-slot>
 
+    @if (session('status'))
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-100">
+            {{ session('status') }}
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @forelse($sports as $sport)
-            <a href="{{ route('sports.team_suggestions.index', $sport) }}" class="block rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-5 shadow-sm hover:shadow-md transition">
+            <a href="{{ route('sports.team_suggestions.index', ['sport' => $sport, ...\App\Support\StaffNavContext::query(\App\Support\StaffNavContext::PREDICTIVE)]) }}" class="block rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-gray-900/50 p-5 shadow-sm hover:shadow-md transition">
                 <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $sport->name }}</div>
                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Team recommendations, compatibility analysis, and Elo-based win probability</div>
             </a>
